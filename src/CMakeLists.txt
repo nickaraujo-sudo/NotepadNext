@@ -199,6 +199,10 @@ qt_add_executable(NotepadNext
 	craftpad/ThemeManager.h
 	craftpad/FormatController.cpp
 	craftpad/FormatController.h
+	craftpad/NoteSuggester.cpp
+	craftpad/NoteSuggester.h
+	craftpad/MeetingAssistantDock.cpp
+	craftpad/MeetingAssistantDock.h
 	docks/SearchResultsDock.cpp
 	docks/SearchResultsDock.h
 	docks/SearchResultsDock.ui

@@ -69,6 +69,7 @@
 #include "MarkdownPreviewDock.h"
 #include "CraftPadHub.h"
 #include "FormatController.h"
+#include "MeetingAssistantDock.h"
 #include "VaultIndex.h"
 #include "VaultDock.h"
 #include "BacklinksDock.h"
@@ -2475,6 +2476,28 @@ void MainWindow::setupCraftPad()
             const QSize size(qMax(700, width() * 3 / 4), qMax(500, height() * 3 / 4));
             graphDock->resize(size);
             graphDock->move(geometry().center() - QPoint(size.width() / 2, size.height() / 2));
+        }
+    });
+
+    // Meeting Assistant: transcrição da reunião + conexões com as notas
+    MeetingAssistantDock *meetingDock = new MeetingAssistantDock(this);
+    meetingDock->hide();
+    addDockWidget(Qt::BottomDockWidgetArea, meetingDock);
+    QAction *meetingAction = meetingDock->toggleViewAction();
+    meetingAction->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_J));
+    ui->menuView->addAction(meetingAction);
+    connect(meetingAction, &QAction::triggered, this, [this, meetingDock](bool checked) {
+        if (checked && !meetingDock->property("placed").toBool()) {
+            meetingDock->setProperty("placed", true);
+            meetingDock->setFloating(true);
+            const QRect screen = this->screen()->availableGeometry();
+            const QSize size(qMin(screen.width() - 40, qMax(1000, width() * 4 / 5)),
+                             qMin(screen.height() - 60, qMax(640, height() * 4 / 5)));
+            meetingDock->resize(size);
+            QPoint topLeft = geometry().center() - QPoint(size.width() / 2, size.height() / 2);
+            topLeft.setX(qBound(screen.left(), topLeft.x(), screen.right() - size.width()));
+            topLeft.setY(qBound(screen.top(), topLeft.y(), screen.bottom() - size.height()));
+            meetingDock->move(topLeft);
         }
     });
 
