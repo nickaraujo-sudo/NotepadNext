@@ -167,6 +167,22 @@ qt_add_executable(NotepadNext
 	docks/LuaConsoleDock.cpp
 	docks/LuaConsoleDock.h
 	docks/LuaConsoleDock.ui
+	docks/MarkdownPreviewDock.cpp
+	docks/MarkdownPreviewDock.h
+	craftpad/CraftPadHub.cpp
+	craftpad/CraftPadHub.h
+	craftpad/VaultIndex.cpp
+	craftpad/VaultIndex.h
+	craftpad/VaultDock.cpp
+	craftpad/VaultDock.h
+	craftpad/BacklinksDock.cpp
+	craftpad/BacklinksDock.h
+	craftpad/WikiLinkDecorator.cpp
+	craftpad/WikiLinkDecorator.h
+	craftpad/GraphView.cpp
+	craftpad/GraphView.h
+	craftpad/GraphDock.cpp
+	craftpad/GraphDock.h
 	docks/SearchResultsDock.cpp
 	docks/SearchResultsDock.h
 	docks/SearchResultsDock.ui
@@ -205,6 +221,7 @@ qt_add_translations(NotepadNext
 
 target_include_directories(NotepadNext
     PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/craftpad
         ${CMAKE_CURRENT_SOURCE_DIR}/decorators
         ${CMAKE_CURRENT_SOURCE_DIR}/dialogs
         ${CMAKE_CURRENT_SOURCE_DIR}/docks

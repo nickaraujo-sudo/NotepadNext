@@ -34,6 +34,7 @@
 #include "AutoIndentation.h"
 #include "AutoCompletion.h"
 #include "URLFinder.h"
+#include "WikiLinkDecorator.h"
 #include "BookMarkDecorator.h"
 #include "HTMLAutoCompleteDecorator.h"
 
@@ -409,6 +410,10 @@ void EditorManager::setupEditor(ScintillaNext *editor)
     bm->setEnabled(true);
 
     new HTMLAutoCompleteDecorator(editor);
+
+    // CraftPad: [[links]], #tags e autocompletar no estilo Obsidian
+    WikiLinkDecorator *wl = new WikiLinkDecorator(editor);
+    wl->setEnabled(true);
 }
 
 void EditorManager::purgeOldEditorPointers()

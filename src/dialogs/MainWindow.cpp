@@ -66,6 +66,12 @@
 #include "SearchResultsDock.h"
 #include "DebugLogDock.h"
 #include "FileListDock.h"
+#include "MarkdownPreviewDock.h"
+#include "CraftPadHub.h"
+#include "VaultIndex.h"
+#include "VaultDock.h"
+#include "BacklinksDock.h"
+#include "GraphDock.h"
 
 #include "FindReplaceDialog.h"
 #include "MacroRunDialog.h"
@@ -1003,6 +1009,8 @@ MainWindow::MainWindow(NotepadNextApplication *app) :
     fileListDock->hide();
     addDockWidget(Qt::LeftDockWidgetArea, fileListDock);
     ui->menuView->addAction(fileListDock->toggleViewAction());
+
+    setupCraftPad();
 
     connect(app->getSettings(), &ApplicationSettings::showMenuBarChanged, this, [this](bool showMenuBar) {
         // Don't 'hide' it, else the actions won't be enabled
@@ -2416,4 +2424,100 @@ void MainWindow::languageMenuTriggered()
     QVariant v = act->data();
 
     setLanguage(editor, v.toString());
+}
+
+// ---------------------------------------------------------------------------
+// CraftPad: vault no estilo Obsidian (pastas + tags, links, backlinks, grafo)
+// ---------------------------------------------------------------------------
+void MainWindow::setupCraftPad()
+{
+    CraftPadHub *hub = CraftPadHub::instance();
+    VaultIndex *index = hub->index();
+
+    ui->menuView->addSeparator();
+
+    // Painel esquerdo: pastas em cima, tags embaixo
+    VaultDock *vaultDock = new VaultDock(this);
+    addDockWidget(Qt::LeftDockWidgetArea, vaultDock);
+    vaultDock->toggleViewAction()->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_E));
+    ui->menuView->addAction(vaultDock->toggleViewAction());
+
+    // Prévia de Markdown lado a lado
+    MarkdownPreviewDock *markdownPreviewDock = new MarkdownPreviewDock(this);
+    markdownPreviewDock->hide();
+    addDockWidget(Qt::RightDockWidgetArea, markdownPreviewDock);
+    markdownPreviewDock->toggleViewAction()->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_M));
+    ui->menuView->addAction(markdownPreviewDock->toggleViewAction());
+
+    // Backlinks, embaixo da prévia
+    BacklinksDock *backlinksDock = new BacklinksDock(this);
+    backlinksDock->hide();
+    addDockWidget(Qt::RightDockWidgetArea, backlinksDock);
+    splitDockWidget(markdownPreviewDock, backlinksDock, Qt::Vertical);
+    backlinksDock->toggleViewAction()->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_B));
+    ui->menuView->addAction(backlinksDock->toggleViewAction());
+
+    // Grafo: abre numa janela flutuante grande (pode ser encaixada)
+    GraphDock *graphDock = new GraphDock(this);
+    graphDock->hide();
+    addDockWidget(Qt::RightDockWidgetArea, graphDock);
+    QAction *graphAction = graphDock->toggleViewAction();
+    graphAction->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_G));
+    ui->menuView->addAction(graphAction);
+    connect(graphAction, &QAction::triggered, this, [this, graphDock](bool checked) {
+        if (checked && !graphDock->property("placed").toBool()) {
+            graphDock->setProperty("placed", true);
+            graphDock->setFloating(true);
+            const QSize size(qMax(700, width() * 3 / 4), qMax(500, height() * 3 / 4));
+            graphDock->resize(size);
+            graphDock->move(geometry().center() - QPoint(size.width() / 2, size.height() / 2));
+        }
+    });
+
+    QAction *openVault = new QAction(tr("Abrir pasta do vault..."), this);
+    connect(openVault, &QAction::triggered, vaultDock, &VaultDock::chooseVault);
+    ui->menuFile->insertAction(ui->menuFile->actions().value(2), openVault);
+
+    // Abrir arquivo (vindo do painel, do grafo ou dos backlinks)
+    connect(hub, &CraftPadHub::openFileRequested, this, [this](const QString &path, int line) {
+        openFile(path);
+        ScintillaNext *editor = currentEditor();
+        if (line >= 0 && editor && editor->getFilePath() == path) {
+            editor->ensureVisible(line);
+            editor->gotoLine(line);
+            editor->verticalCentreCaret();
+        }
+    });
+
+    // Abrir [[link]]: cria a nota se ela ainda não existe (como o Obsidian)
+    connect(hub, &CraftPadHub::openNoteRequested, this, [this, index](const QString &target, const QString &fromPath) {
+        QString path = index->resolveLink(target);
+        if (path.isEmpty()) {
+            if (target.startsWith(QLatin1Char('\x01'))) {
+                path = target.mid(1);
+                QFile f(path);
+                if (!f.exists() && f.open(QIODevice::WriteOnly))
+                    f.close();
+            }
+            else if (index->hasRoot()) {
+                path = index->createNote(target);
+            }
+            else if (!fromPath.isEmpty()) {
+                // Sem vault: cria ao lado da nota atual
+                path = QFileInfo(fromPath).dir().absoluteFilePath(target + QStringLiteral(".md"));
+                QFile f(path);
+                if (!f.exists() && f.open(QIODevice::WriteOnly)) {
+                    f.write(QStringLiteral("# %1\n\n").arg(QFileInfo(path).completeBaseName()).toUtf8());
+                    f.close();
+                }
+            }
+        }
+        if (!path.isEmpty())
+            openFile(path);
+    });
+
+    connect(this, &MainWindow::editorActivated, vaultDock, [vaultDock](ScintillaNext *editor) {
+        if (editor && editor->isFile())
+            vaultDock->selectFile(editor->getFilePath());
+    });
 }
