@@ -16,6 +16,7 @@ jobs:
       - name: Build
         working-directory: tools/voicelab
         run: |
+          set -o pipefail
           swift --version
           swift build -c release 2>&1 | tail -40
 

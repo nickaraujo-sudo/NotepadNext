@@ -81,13 +81,14 @@ final class Vocabulary {
                 let parts = window.map { Vocabulary.split($0.text) }
                 // Não atravessa pontuação no meio do trecho
                 if n > 1, parts.dropLast().contains(where: { !$0.trail.isEmpty }) { continue }
-                let core = parts.map(\.core).joined()
+                let core = parts.map { $0.core }.joined()
                 let key = Vocabulary.normalize(core)
                 guard key.count >= 3 else { continue }
-                let capitalized = parts.first?.core.first?.isUppercase ?? false
+                let capitalized = parts[0].core.first?.isUppercase ?? false
 
-                var best: (term: Term, score: Double)?
-                for term in terms {
+                var bestIndex = -1
+                var bestScore = 0.0
+                for (index, term) in terms.enumerated() {
                     // Palavras curtas só com correspondência exata
                     let exact = term.key == key
                     // Palavra comum em minúscula igual a um termo simples (ex.: "ideias"): deixa como está
@@ -96,19 +97,20 @@ final class Vocabulary {
                         guard key.count >= 4, capitalized, abs(term.key.count - key.count) <= 2 else { continue }
                     }
                     let score = exact ? 1.0 : Vocabulary.similarity(key, term.key)
-                    if score >= (n > 1 ? 0.86 : 0.8), score > (best?.score ?? 0) {
-                        best = (term, score)
+                    if score >= (n > 1 ? 0.86 : 0.8), score > bestScore {
+                        bestIndex = index
+                        bestScore = score
                     }
                 }
-                if let best {
-                    // Juntar várias palavras só se o termo também tiver mais de uma, ou se for exato
-                    if n > 1 && best.term.wordCount == 1 && best.score < 0.95 { continue }
-                    out.append(Word(text: parts.first!.lead + best.term.text + parts.last!.trail,
-                                    start: window.first!.start, end: window.last!.end))
-                    i += n
-                    replaced = true
-                    break
-                }
+                guard bestIndex >= 0 else { continue }
+                let term = terms[bestIndex]
+                // Juntar várias palavras só se o termo também tiver mais de uma, ou se for exato
+                if n > 1 && term.wordCount == 1 && bestScore < 0.95 { continue }
+                out.append(Word(text: parts[0].lead + term.text + parts[n - 1].trail,
+                                start: window[0].start, end: window[n - 1].end))
+                i += n
+                replaced = true
+                break
             }
             if !replaced {
                 out.append(words[i])
