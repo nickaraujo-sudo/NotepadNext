@@ -24,6 +24,9 @@
 #include "ScintillaEdit.h"
 
 #include <QDateTime>
+#include <functional>
+
+class QMimeData;
 #include <QFile>
 #include <QFileInfo>
 
@@ -160,8 +163,14 @@ signals:
     void lexerChanged();
     void reloaded();
 
+public:
+    // craftpad++: imagens arrastadas para o editor (Finder ou navegador)
+    static std::function<bool(ScintillaNext *, const QMimeData *)> canDropImage;
+    static std::function<bool(ScintillaNext *, const QMimeData *, int)> dropImage;
+
 protected:
     void dragEnterEvent(QDragEnterEvent *event) override;
+    void dragMoveEvent(QDragMoveEvent *event) override;
     void dropEvent(QDropEvent *event) override;
 
 private:

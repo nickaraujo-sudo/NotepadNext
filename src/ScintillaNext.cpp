@@ -27,6 +27,8 @@
 
 #include <QDir>
 #include <QMouseEvent>
+#include <QMimeData>
+#include <QDragMoveEvent>
 #include <QSaveFile>
 #include <QTextCodec>
 
@@ -652,8 +654,28 @@ void ScintillaNext::trimTrailingWhitespace()
     f.replaceAll(QString());
 }
 
+std::function<bool(ScintillaNext *, const QMimeData *)> ScintillaNext::canDropImage;
+std::function<bool(ScintillaNext *, const QMimeData *, int)> ScintillaNext::dropImage;
+
+void ScintillaNext::dragMoveEvent(QDragMoveEvent *event)
+{
+    if (canDropImage && canDropImage(this, event->mimeData())) {
+        // Mostra onde a imagem vai entrar
+        const QPoint p = event->position().toPoint();
+        setEmptySelection(positionFromPoint(p.x(), p.y()));
+        event->acceptProposedAction();
+        return;
+    }
+    ScintillaEdit::dragMoveEvent(event);
+}
+
 void ScintillaNext::dragEnterEvent(QDragEnterEvent *event)
 {
+    if (canDropImage && canDropImage(this, event->mimeData())) {
+        event->acceptProposedAction();
+        return;
+    }
+
     // Ignore all drag and drop events with urls and let the main application handle it
     if (event->mimeData()->hasUrls()) {
         return;
@@ -664,6 +686,14 @@ void ScintillaNext::dragEnterEvent(QDragEnterEvent *event)
 
 void ScintillaNext::dropEvent(QDropEvent *event)
 {
+    if (canDropImage && dropImage && canDropImage(this, event->mimeData())) {
+        const QPoint p = event->position().toPoint();
+        if (dropImage(this, event->mimeData(), positionFromPoint(p.x(), p.y()))) {
+            event->acceptProposedAction();
+            return;
+        }
+    }
+
     // Ignore all drag and drop events with urls and let the main application handle it
     if (event->mimeData()->hasUrls()) {
         return;

@@ -69,7 +69,7 @@ NoteInfo VaultIndex::parse(const QString &path, const QString &text)
     info.name = QFileInfo(path).completeBaseName();
 
     // Tags no estilo Obsidian: #tag, #tag/subtag, precisa ter ao menos uma letra
-    static const QRegularExpression tagRe(QStringLiteral(R"((?<![\p{L}\p{N}_/#&\]])#([\p{L}\p{N}_\-/]*[\p{L}_\-][\p{L}\p{N}_\-/]*))"));
+    static const QRegularExpression tagRe(QStringLiteral(R"((?<![\p{L}\p{N}_/#&"'=:\]])#([\p{L}\p{N}_\-/]*[\p{L}_\-][\p{L}\p{N}_\-/]*))"));
     // Links internos: [[Nota]], [[Nota|apelido]], [[Nota#Seção]], ![[imagem.png]]
     static const QRegularExpression wikiRe(QStringLiteral(R"(\[\[([^\]\|#\^\n]+)(?:[#\^][^\]\|\n]*)?(?:\|[^\]\n]*)?\]\])"));
     // Links Markdown para outras notas: [texto](nota.md)

@@ -183,6 +183,22 @@ qt_add_executable(NotepadNext
 	craftpad/GraphView.h
 	craftpad/GraphDock.cpp
 	craftpad/GraphDock.h
+	craftpad/MarkdownTable.cpp
+	craftpad/MarkdownTable.h
+	craftpad/FormulaEngine.cpp
+	craftpad/FormulaEngine.h
+	craftpad/MarkdownRenderer.cpp
+	craftpad/MarkdownRenderer.h
+	craftpad/MarkdownCommands.cpp
+	craftpad/MarkdownCommands.h
+	craftpad/VaultTables.cpp
+	craftpad/VaultTables.h
+	craftpad/ImageSupport.cpp
+	craftpad/ImageSupport.h
+	craftpad/ThemeManager.cpp
+	craftpad/ThemeManager.h
+	craftpad/FormatController.cpp
+	craftpad/FormatController.h
 	docks/SearchResultsDock.cpp
 	docks/SearchResultsDock.h
 	docks/SearchResultsDock.ui
@@ -258,6 +274,7 @@ target_link_libraries(NotepadNext
         lexilla
         scintilla
         uchardet
+        md4c
 )
 
 if(APPLE)

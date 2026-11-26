@@ -40,3 +40,4 @@ add_subdirectory(lexilla EXCLUDE_FROM_ALL)
 add_subdirectory(uchardet EXCLUDE_FROM_ALL)
 
 target_link_libraries(lexilla PRIVATE scintilla)
+add_subdirectory(md4c EXCLUDE_FROM_ALL)

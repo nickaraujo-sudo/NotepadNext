@@ -85,7 +85,7 @@ void WikiLinkDecorator::highlight()
         return;
 
     static const QRegularExpression linkRe(QStringLiteral(R"(!?\[\[[^\]\n]+\]\])"));
-    static const QRegularExpression tagRe(QStringLiteral(R"((?<![\p{L}\p{N}_/#&\]])#[\p{L}\p{N}_\-/]*[\p{L}_\-][\p{L}\p{N}_\-/]*)"));
+    static const QRegularExpression tagRe(QStringLiteral(R"((?<![\p{L}\p{N}_/#&"'=:\]])#[\p{L}\p{N}_\-/]*[\p{L}_\-][\p{L}\p{N}_\-/]*)"));
 
     // Só processa as linhas visíveis, como o destaque de URLs
     int line = editor->docLineFromVisible(editor->firstVisibleLine());
