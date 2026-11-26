@@ -181,8 +181,8 @@ qt_add_executable(NotepadNext
 	notepadnext/WikiLinkDecorator.h
 	notepadnext/GraphView.cpp
 	notepadnext/GraphView.h
-	notepadnext/GraphDock.cpp
-	notepadnext/GraphDock.h
+	notepadnext/GraphPage.cpp
+	notepadnext/GraphPage.h
 	notepadnext/MarkdownTable.cpp
 	notepadnext/MarkdownTable.h
 	notepadnext/FormulaEngine.cpp
@@ -201,8 +201,10 @@ qt_add_executable(NotepadNext
 	notepadnext/FormatController.h
 	notepadnext/NoteSuggester.cpp
 	notepadnext/NoteSuggester.h
-	notepadnext/MeetingAssistantDock.cpp
-	notepadnext/MeetingAssistantDock.h
+	notepadnext/MeetingAssistantPage.cpp
+	notepadnext/MeetingAssistantPage.h
+	notepadnext/WorkspaceController.cpp
+	notepadnext/WorkspaceController.h
 	docks/SearchResultsDock.cpp
 	docks/SearchResultsDock.h
 	docks/SearchResultsDock.ui

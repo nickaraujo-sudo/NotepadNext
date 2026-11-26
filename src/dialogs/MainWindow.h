@@ -37,6 +37,7 @@ class MainWindow;
 
 class NotepadNextApplication;
 class Macro;
+class WorkspaceController;
 class Settings;
 class QuickFindWidget;
 class ZoomEventWatcher;
@@ -176,6 +177,7 @@ private:
     ScintillaNext *getInitialEditor();
     void openFileList(const QStringList &fileNames);
     void setupNotepadNextFeatures();
+    WorkspaceController *workspace = nullptr;
     bool checkEditorsBeforeClose(const QVector<ScintillaNext *> &editors);
     bool checkFileForModification(ScintillaNext *editor);
     void showSaveErrorMessage(ScintillaNext *editor, QFileDevice::FileError error);

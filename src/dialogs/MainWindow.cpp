@@ -69,11 +69,10 @@
 #include "MarkdownPreviewDock.h"
 #include "NotepadNextHub.h"
 #include "FormatController.h"
-#include "MeetingAssistantDock.h"
+#include "WorkspaceController.h"
 #include "VaultIndex.h"
 #include "VaultDock.h"
 #include "BacklinksDock.h"
-#include "GraphDock.h"
 
 #include "FindReplaceDialog.h"
 #include "MacroRunDialog.h"
@@ -1197,6 +1196,10 @@ void MainWindow::openFileList(const QStringList &fileNames)
 {
     qInfo(Q_FUNC_INFO);
 
+    // Abrir um arquivo sempre leva para a aba Anotações
+    if (workspace && !fileNames.isEmpty())
+        workspace->showNotes();
+
     if (fileNames.size() == 0)
         return;
 
@@ -2053,6 +2056,10 @@ void MainWindow::saveSettings() const
 {
     qInfo(Q_FUNC_INFO);
 
+    // O layout salvo é sempre o das anotações; a aba aberta é lembrada à parte
+    if (workspace)
+        workspace->prepareForSave();
+
     ApplicationSettings *settings = app->getSettings();
 
     settings->setValue("MainWindow/geometry", saveGeometry());
@@ -2102,6 +2109,9 @@ void MainWindow::restoreWindowState()
     // Always hide the dock no matter how the application was closed
     SearchResultsDock *srDock = findChild<SearchResultsDock *>();
     srDock->hide();
+
+    if (workspace)
+        workspace->restoreMode();
 }
 
 void MainWindow::switchToEditor(const ScintillaNext *editor)
@@ -2462,48 +2472,12 @@ void MainWindow::setupNotepadNextFeatures()
     backlinksDock->toggleViewAction()->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_B));
     ui->menuView->addAction(backlinksDock->toggleViewAction());
 
-    // Grafo: abre numa janela flutuante grande (pode ser encaixada)
-    GraphDock *graphDock = new GraphDock(this);
-    graphDock->hide();
-    addDockWidget(Qt::RightDockWidgetArea, graphDock);
-    QAction *graphAction = graphDock->toggleViewAction();
-    graphAction->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_G));
-    ui->menuView->addAction(graphAction);
-    connect(graphAction, &QAction::triggered, this, [this, graphDock](bool checked) {
-        if (checked && !graphDock->property("placed").toBool()) {
-            graphDock->setProperty("placed", true);
-            graphDock->setFloating(true);
-            const QSize size(qMax(700, width() * 3 / 4), qMax(500, height() * 3 / 4));
-            graphDock->resize(size);
-            graphDock->move(geometry().center() - QPoint(size.width() / 2, size.height() / 2));
-        }
-    });
-
-    // Meeting Assistant: transcrição da reunião + conexões com as notas
-    MeetingAssistantDock *meetingDock = new MeetingAssistantDock(this);
-    meetingDock->hide();
-    addDockWidget(Qt::BottomDockWidgetArea, meetingDock);
-    QAction *meetingAction = meetingDock->toggleViewAction();
-    meetingAction->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_J));
-    ui->menuView->addAction(meetingAction);
-    connect(meetingAction, &QAction::triggered, this, [this, meetingDock](bool checked) {
-        if (checked && !meetingDock->property("placed").toBool()) {
-            meetingDock->setProperty("placed", true);
-            meetingDock->setFloating(true);
-            const QRect screen = this->screen()->availableGeometry();
-            const QSize size(qMin(screen.width() - 40, qMax(1000, width() * 4 / 5)),
-                             qMin(screen.height() - 60, qMax(640, height() * 4 / 5)));
-            meetingDock->resize(size);
-            QPoint topLeft = geometry().center() - QPoint(size.width() / 2, size.height() / 2);
-            topLeft.setX(qBound(screen.left(), topLeft.x(), screen.right() - size.width()));
-            topLeft.setY(qBound(screen.top(), topLeft.y(), screen.bottom() - size.height()));
-            meetingDock->move(topLeft);
-        }
-    });
-
     QAction *openVault = new QAction(tr("Abrir pasta do vault..."), this);
     connect(openVault, &QAction::triggered, vaultDock, &VaultDock::chooseVault);
     ui->menuFile->insertAction(ui->menuFile->actions().value(2), openVault);
+
+    // Abas do topo: Anotações | Grafo | Meeting Assistant (cada uma com seus menus e ícones)
+    workspace = new WorkspaceController(this, ui->menuBar, ui->menuView, ui->menuHelp, ui->mainToolBar, openVault);
 
     // Abrir arquivo (vindo do painel, do grafo ou dos backlinks)
     connect(hub, &NotepadNextHub::openFileRequested, this, [this](const QString &path, int line) {

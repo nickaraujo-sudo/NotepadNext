@@ -406,6 +406,105 @@ QIcon ThemeManager::icon(const QString &name) const
     else if (name == QLatin1String("formula")) {
         text(QStringLiteral("fx"), 34, false, true, pm.rect(), Qt::AlignCenter, QStringLiteral("Georgia"));
     }
+    // --- Abas e barras do Grafo e do Meeting Assistant ---
+    else if (name == QLatin1String("notes")) {
+        p.drawRoundedRect(QRectF(12, 6, 40, 52), 6, 6);
+        drawLines(p, {{20, 44}, {20, 44}, {20, 36}}, 22, 11);
+        p.setPen(QPen(accent, 4, Qt::SolidLine, Qt::RoundCap));
+        p.drawLine(QPointF(20, 14), QPointF(32, 14));
+    }
+    else if (name == QLatin1String("graph")) {
+        const QPointF a(16, 18), b(46, 14), c(32, 40), d(14, 50), e(52, 48);
+        p.setPen(QPen(fg, 3, Qt::SolidLine, Qt::RoundCap));
+        p.drawLine(a, c); p.drawLine(b, c); p.drawLine(c, d); p.drawLine(c, e); p.drawLine(a, b);
+        p.setPen(Qt::NoPen);
+        p.setBrush(fg);
+        for (const QPointF &pt : {a, b, d, e}) p.drawEllipse(pt, 6, 6);
+        p.setBrush(accent);
+        p.drawEllipse(c, 8, 8);
+    }
+    else if (name == QLatin1String("meeting") || name == QLatin1String("voices")) {
+        if (name == QLatin1String("meeting")) {
+            p.drawRoundedRect(QRectF(24, 6, 16, 32), 8, 8);
+            p.drawArc(QRectF(14, 18, 36, 30), 180 * 16, 180 * 16);
+            p.drawLine(QPointF(32, 48), QPointF(32, 58));
+            p.drawLine(QPointF(22, 58), QPointF(42, 58));
+            p.setPen(QPen(accent, 4, Qt::SolidLine, Qt::RoundCap));
+            p.drawLine(QPointF(29, 16), QPointF(35, 16));
+        }
+        else {
+            p.drawEllipse(QPointF(26, 22), 10, 10);
+            p.drawArc(QRectF(8, 36, 36, 30), 0, 180 * 16);
+            p.setPen(QPen(accent, 4, Qt::SolidLine, Qt::RoundCap));
+            p.drawArc(QRectF(40, 14, 12, 18), -60 * 16, 120 * 16);
+            p.drawArc(QRectF(38, 8, 20, 30), -60 * 16, 120 * 16);
+        }
+    }
+    else if (name == QLatin1String("record")) {
+        p.setPen(Qt::NoPen);
+        p.setBrush(QColor(0xE1, 0x55, 0x54));
+        p.drawEllipse(QPointF(32, 32), 18, 18);
+    }
+    else if (name == QLatin1String("stop")) {
+        p.setPen(Qt::NoPen);
+        p.setBrush(fg);
+        p.drawRoundedRect(QRectF(16, 16, 32, 32), 5, 5);
+    }
+    else if (name == QLatin1String("folder-open") || name == QLatin1String("vault")) {
+        QPainterPath f;
+        f.moveTo(8, 50); f.lineTo(8, 14); f.lineTo(24, 14); f.lineTo(30, 20); f.lineTo(54, 20); f.lineTo(54, 50); f.closeSubpath();
+        p.drawPath(f);
+        p.setPen(QPen(accent, 4, Qt::SolidLine, Qt::RoundCap));
+        p.drawLine(QPointF(14, 28), QPointF(48, 28));
+    }
+    else if (name == QLatin1String("audio-file")) {
+        p.drawRoundedRect(QRectF(12, 6, 40, 52), 6, 6);
+        p.setPen(QPen(accent, 4, Qt::SolidLine, Qt::RoundCap));
+        const qreal hs[] = {6, 14, 22, 12, 18, 8};
+        for (int i = 0; i < 6; ++i) {
+            const qreal x = 20 + i * 5;
+            p.drawLine(QPointF(x, 32 - hs[i] / 2), QPointF(x, 32 + hs[i] / 2));
+        }
+    }
+    else if (name == QLatin1String("refresh") || name == QLatin1String("graph-spin")) {
+        p.setPen(QPen(name == QLatin1String("graph-spin") ? accent : fg, 4.5, Qt::SolidLine, Qt::RoundCap));
+        p.drawArc(QRectF(12, 12, 40, 40), 30 * 16, 290 * 16);
+        QPainterPath head;
+        head.moveTo(52, 12); head.lineTo(50, 28); head.lineTo(36, 22); head.closeSubpath();
+        p.setPen(Qt::NoPen);
+        p.setBrush(name == QLatin1String("graph-spin") ? accent : fg);
+        p.drawPath(head);
+    }
+    else if (name == QLatin1String("note-save")) {
+        p.drawRoundedRect(QRectF(12, 6, 40, 52), 6, 6);
+        drawLines(p, {{20, 44}, {20, 36}}, 18, 10);
+        p.setPen(QPen(accent, 5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        p.drawPolyline(QPolygonF({QPointF(22, 42), QPointF(30, 50), QPointF(44, 34)}));
+    }
+    else if (name == QLatin1String("graph-tags")) {
+        p.setPen(accent);
+        text(QStringLiteral("#"), 46, true, false, pm.rect());
+    }
+    else if (name == QLatin1String("graph-orphans")) {
+        p.setPen(QPen(fg, 3, Qt::SolidLine, Qt::RoundCap));
+        p.drawLine(QPointF(14, 44), QPointF(30, 24));
+        p.setPen(Qt::NoPen);
+        p.setBrush(fg);
+        p.drawEllipse(QPointF(14, 44), 6, 6);
+        p.drawEllipse(QPointF(30, 24), 6, 6);
+        p.setBrush(accent);
+        p.drawEllipse(QPointF(48, 44), 7, 7);
+    }
+    else if (name == QLatin1String("graph-fit")) {
+        p.drawEllipse(QPointF(32, 32), 16, 16);
+        p.drawLine(QPointF(32, 6), QPointF(32, 18));
+        p.drawLine(QPointF(32, 46), QPointF(32, 58));
+        p.drawLine(QPointF(6, 32), QPointF(18, 32));
+        p.drawLine(QPointF(46, 32), QPointF(58, 32));
+        p.setPen(Qt::NoPen);
+        p.setBrush(accent);
+        p.drawEllipse(QPointF(32, 32), 5, 5);
+    }
     p.end();
     return QIcon(pm);
 }

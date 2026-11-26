@@ -3,13 +3,14 @@
  * Licença GPL-3.0 (a mesma do projeto original, dail8859/NotepadNext).
  */
 
-#include "MeetingAssistantDock.h"
+#include "MeetingAssistantPage.h"
 
 #include "NotepadNextHub.h"
 #include "MainWindow.h"
 #include "NoteSuggester.h"
 #include "VaultIndex.h"
 
+#include <QAction>
 #include <QCheckBox>
 #include <QDateTime>
 #include <QDialog>
@@ -66,10 +67,10 @@ static QString meetingsRoot()
     return QDir::home().filePath(QStringLiteral("NotepadNext-reunioes"));
 }
 
-MeetingAssistantDock::MeetingAssistantDock(MainWindow *window)
-    : QDockWidget(tr("Meeting Assistant"), window), window(window)
+MeetingAssistantPage::MeetingAssistantPage(MainWindow *window)
+    : QWidget(window), window(window)
 {
-    setObjectName(QStringLiteral("MeetingAssistantDock"));
+    setObjectName(QStringLiteral("MeetingAssistantPage"));
     suggester = new NoteSuggester(NotepadNextHub::instance()->index(), this);
     buildUi();
     setState(State::Idle);
@@ -94,47 +95,38 @@ MeetingAssistantDock::MeetingAssistantDock(MainWindow *window)
     });
 }
 
-void MeetingAssistantDock::buildUi()
+void MeetingAssistantPage::buildUi()
 {
-    QWidget *root = new QWidget(this);
+    QWidget *root = this;
     QVBoxLayout *layout = new QVBoxLayout(root);
     layout->setContentsMargins(8, 6, 8, 6);
     layout->setSpacing(6);
 
-    // Linha 1: título e ações
-    QHBoxLayout *actions = new QHBoxLayout;
+    // Linha 1: título da reunião e fonte do áudio (as ações ficam na barra e no menu "Reunião")
+    QHBoxLayout *header = new QHBoxLayout;
     titleEdit = new QLineEdit(root);
     titleEdit->setPlaceholderText(tr("Título da reunião (ex.: 26-11 Illumia: proposta de agentes)"));
-    recordButton = new QPushButton(tr("● Gravar"), root);
-    recordButton->setToolTip(tr("Grava o microfone e, se marcado, o som do computador. Nenhum bot entra na reunião."));
-    stopButton = new QPushButton(tr("■ Parar"), root);
     systemAudioCheck = new QCheckBox(tr("Som do computador (reunião online)"), root);
     systemAudioCheck->setChecked(QSettings().value(QStringLiteral("NotepadNext/meeting/systemAudio"), true).toBool());
     systemAudioCheck->setToolTip(tr("Desmarque em reuniões presenciais: só o microfone é gravado."));
+    header->addWidget(titleEdit, 1);
+    header->addSpacing(8);
+    header->addWidget(systemAudioCheck);
+    layout->addLayout(header);
 
-    openButton = new QToolButton(root);
-    openButton->setText(tr("Abrir"));
-    openButton->setPopupMode(QToolButton::InstantPopup);
-    QMenu *openMenu = new QMenu(openButton);
-    openMenu->addAction(tr("Reunião gravada (pasta)…"), this, &MeetingAssistantDock::openMeeting);
-    openMenu->addAction(tr("Arquivo de áudio (Plaud, m4a, wav, mp3)…"), this, &MeetingAssistantDock::openAudioFile);
-    openButton->setMenu(openMenu);
-
-    reanalyzeButton = new QPushButton(tr("Reanalisar"), root);
-    reanalyzeButton->setToolTip(tr("Refaz a transcrição com o vocabulário atual do vault e as vozes conhecidas."));
-    nameButton = new QPushButton(tr("Nomear vozes…"), root);
-    saveButton = new QPushButton(tr("Salvar como nota"), root);
-
-    actions->addWidget(titleEdit, 1);
-    actions->addWidget(recordButton);
-    actions->addWidget(stopButton);
-    actions->addWidget(systemAudioCheck);
-    actions->addSpacing(12);
-    actions->addWidget(openButton);
-    actions->addWidget(reanalyzeButton);
-    actions->addWidget(nameButton);
-    actions->addWidget(saveButton);
-    layout->addLayout(actions);
+    auto makeAction = [this](const QString &text, const QString &tip, void (MeetingAssistantPage::*slot)()) {
+        QAction *a = new QAction(text, this);
+        a->setToolTip(tip);
+        connect(a, &QAction::triggered, this, slot);
+        return a;
+    };
+    recordAction = makeAction(tr("Gravar"), tr("Grava o microfone e, se marcado, o som do computador. Nenhum bot entra na reunião."), &MeetingAssistantPage::startRecording);
+    stopAction = makeAction(tr("Parar"), tr("Para a gravação e separa quem falou o quê"), &MeetingAssistantPage::stopRecording);
+    openMeetingAction = makeAction(tr("Abrir reunião…"), tr("Abre uma reunião já gravada"), &MeetingAssistantPage::openMeeting);
+    openAudioAction = makeAction(tr("Abrir áudio…"), tr("Analisa uma gravação que você já tem (Plaud, m4a, wav, mp3)"), &MeetingAssistantPage::openAudioFile);
+    reanalyzeAction = makeAction(tr("Reanalisar"), tr("Refaz a transcrição com o vocabulário atual do vault e as vozes conhecidas"), &MeetingAssistantPage::reanalyze);
+    nameAction = makeAction(tr("Nomear vozes…"), tr("Dá nome a cada pessoa; a voz é reconhecida sozinha nas próximas reuniões"), &MeetingAssistantPage::nameSpeakers);
+    saveAction = makeAction(tr("Salvar como nota"), tr("Cria uma nota no vault com a transcrição e links para as notas relacionadas"), &MeetingAssistantPage::saveAsNote);
 
     // Linha 2: status e níveis
     QHBoxLayout *status = new QHBoxLayout;
@@ -161,7 +153,7 @@ void MeetingAssistantDock::buildUi()
     transcriptView = new QTextBrowser(split);
     transcriptView->setOpenLinks(false);
     transcriptView->document()->setDocumentMargin(14);
-    connect(transcriptView, &QTextBrowser::anchorClicked, this, &MeetingAssistantDock::handleLink);
+    connect(transcriptView, &QTextBrowser::anchorClicked, this, &MeetingAssistantPage::handleLink);
 
     QWidget *side = new QWidget(split);
     QVBoxLayout *sideLayout = new QVBoxLayout(side);
@@ -187,7 +179,7 @@ void MeetingAssistantDock::buildUi()
     suggestionList->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
     connect(suggestionList, &QListWidget::itemClicked, this, [this](QListWidgetItem *item) {
         const QString path = item->data(Qt::UserRole).toString();
-        if (!path.isEmpty()) window->openFile(path);
+        if (!path.isEmpty()) emit NotepadNextHub::instance()->openFileRequested(path, -1);
     });
     QLabel *peopleTitle = new QLabel(tr("<b>Participação</b>"), side);
     participationLabel = new QLabel(side);
@@ -211,30 +203,25 @@ void MeetingAssistantDock::buildUi()
     split->setStretchFactor(1, 1);
     split->setSizes({640, 280});
     layout->addWidget(split, 1);
-    setWidget(root);
 
-    connect(recordButton, &QPushButton::clicked, this, &MeetingAssistantDock::startRecording);
-    connect(stopButton, &QPushButton::clicked, this, &MeetingAssistantDock::stopRecording);
-    connect(reanalyzeButton, &QPushButton::clicked, this, &MeetingAssistantDock::reanalyze);
-    connect(nameButton, &QPushButton::clicked, this, &MeetingAssistantDock::nameSpeakers);
-    connect(saveButton, &QPushButton::clicked, this, &MeetingAssistantDock::saveAsNote);
     connect(systemAudioCheck, &QCheckBox::toggled, this, [](bool on) {
         QSettings().setValue(QStringLiteral("NotepadNext/meeting/systemAudio"), on);
     });
 }
 
-void MeetingAssistantDock::setState(State s)
+void MeetingAssistantPage::setState(State s)
 {
     state = s;
     const bool idle = s == State::Idle;
     const bool hasResult = !folder.isEmpty() && QFile::exists(QDir(folder).filePath(QStringLiteral("resultado.json")));
-    recordButton->setEnabled(idle);
-    stopButton->setEnabled(s == State::Recording);
+    recordAction->setEnabled(idle);
+    stopAction->setEnabled(s == State::Recording);
     systemAudioCheck->setEnabled(idle);
-    openButton->setEnabled(idle);
-    reanalyzeButton->setEnabled(idle && !folder.isEmpty());
-    nameButton->setEnabled(idle && hasResult);
-    saveButton->setEnabled(idle && !turns.isEmpty());
+    openMeetingAction->setEnabled(idle);
+    openAudioAction->setEnabled(idle);
+    reanalyzeAction->setEnabled(idle && !folder.isEmpty());
+    nameAction->setEnabled(idle && hasResult);
+    saveAction->setEnabled(idle && !turns.isEmpty());
     micLevel->setVisible(s == State::Recording);
     sysLevel->setVisible(s == State::Recording && systemAudioCheck->isChecked());
 
@@ -259,7 +246,7 @@ void MeetingAssistantDock::setState(State s)
     }
 }
 
-QString MeetingAssistantDock::voicelabPath(bool ask)
+QString MeetingAssistantPage::voicelabPath(bool ask)
 {
     QSettings settings;
     QString path = settings.value(QStringLiteral("NotepadNext/voicelabPath")).toString();
@@ -292,7 +279,7 @@ QString MeetingAssistantDock::voicelabPath(bool ask)
     return QString();
 }
 
-QString MeetingAssistantDock::writeVocabulary()
+QString MeetingAssistantPage::writeVocabulary()
 {
     const QStringList terms = suggester->vocabularyTerms();
     if (terms.isEmpty())
@@ -308,7 +295,7 @@ QString MeetingAssistantDock::writeVocabulary()
     return path;
 }
 
-void MeetingAssistantDock::runVoicelab(const QStringList &args, State newState)
+void MeetingAssistantPage::runVoicelab(const QStringList &args, State newState)
 {
     if (process)
         return;
@@ -369,7 +356,7 @@ void MeetingAssistantDock::runVoicelab(const QStringList &args, State newState)
     process->start();
 }
 
-void MeetingAssistantDock::handleEvent(const QJsonObject &e)
+void MeetingAssistantPage::handleEvent(const QJsonObject &e)
 {
     const QString type = e.value(QStringLiteral("evento")).toString();
     if (type == QLatin1String("gravando")) {
@@ -409,7 +396,7 @@ void MeetingAssistantDock::handleEvent(const QJsonObject &e)
     }
 }
 
-void MeetingAssistantDock::startRecording()
+void MeetingAssistantPage::startRecording()
 {
     QDir().mkpath(meetingsRoot());
     QString base = QDir(meetingsRoot()).filePath(QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd_HH'h'mm")));
@@ -437,7 +424,7 @@ void MeetingAssistantDock::startRecording()
     runVoicelab(args, State::Starting);
 }
 
-void MeetingAssistantDock::stopRecording()
+void MeetingAssistantPage::stopRecording()
 {
     if (process && state == State::Recording) {
         process->write("\n");
@@ -446,7 +433,7 @@ void MeetingAssistantDock::stopRecording()
     }
 }
 
-void MeetingAssistantDock::openMeeting()
+void MeetingAssistantPage::openMeeting()
 {
     const QString dir = QFileDialog::getExistingDirectory(this, tr("Abrir reunião"), meetingsRoot());
     if (dir.isEmpty()) return;
@@ -460,7 +447,7 @@ void MeetingAssistantDock::openMeeting()
     }
 }
 
-void MeetingAssistantDock::openAudioFile()
+void MeetingAssistantPage::openAudioFile()
 {
     const QString file = QFileDialog::getOpenFileName(this, tr("Analisar gravação"), QDir::homePath(),
                                                       tr("Áudio (*.m4a *.mp3 *.wav *.caf *.aac *.flac *.ogg *.opus *.mp4)"));
@@ -477,7 +464,7 @@ void MeetingAssistantDock::openAudioFile()
     runVoicelab(args, State::Analyzing);
 }
 
-void MeetingAssistantDock::reanalyze()
+void MeetingAssistantPage::reanalyze()
 {
     if (folder.isEmpty()) return;
     QStringList args{QStringLiteral("analisar"), folder};
@@ -487,7 +474,7 @@ void MeetingAssistantDock::reanalyze()
     runVoicelab(args, State::Analyzing);
 }
 
-void MeetingAssistantDock::nameSpeakers()
+void MeetingAssistantPage::nameSpeakers()
 {
     if (speakers.isEmpty()) return;
 
@@ -541,7 +528,7 @@ void MeetingAssistantDock::nameSpeakers()
         runVoicelab(args, State::Naming);
 }
 
-bool MeetingAssistantDock::loadResult(const QString &dir)
+bool MeetingAssistantPage::loadResult(const QString &dir)
 {
     QFile f(QDir(dir).filePath(QStringLiteral("resultado.json")));
     if (!f.open(QIODevice::ReadOnly)) return false;
@@ -593,7 +580,7 @@ bool MeetingAssistantDock::loadResult(const QString &dir)
     return true;
 }
 
-QString MeetingAssistantDock::colorFor(const QString &key) const
+QString MeetingAssistantPage::colorFor(const QString &key) const
 {
     if (key == QLatin1String("ao-vivo:presencial")) return QStringLiteral("#7A8699");
     if (key == QLatin1String("ao-vivo:remoto")) return QStringLiteral("#8E7AA8");
@@ -602,7 +589,7 @@ QString MeetingAssistantDock::colorFor(const QString &key) const
     return QStringLiteral("#888888");
 }
 
-QString MeetingAssistantDock::speakerName(const QString &key) const
+QString MeetingAssistantPage::speakerName(const QString &key) const
 {
     if (key == QLatin1String("ao-vivo:presencial")) return tr("Sala");
     if (key == QLatin1String("ao-vivo:remoto")) return tr("Remoto");
@@ -611,7 +598,7 @@ QString MeetingAssistantDock::speakerName(const QString &key) const
     return QStringLiteral("?");
 }
 
-void MeetingAssistantDock::renderTranscript()
+void MeetingAssistantPage::renderTranscript()
 {
     const QColor muted = mix(palette().color(QPalette::Text), palette().color(QPalette::Base), 0.55);
     const QColor highlight = palette().color(QPalette::Highlight);
@@ -620,12 +607,12 @@ void MeetingAssistantDock::renderTranscript()
         transcriptView->setHtml(tr(
             "<div style='color:%1; margin:30px'>"
             "<h2>Meeting Assistant</h2>"
-            "<p>Clique em <b>● Gravar</b> no início da reunião. A conversa aparece aqui, separada por pessoa, "
+            "<p>Clique em <b>Gravar</b> (na barra acima ou no menu Reunião) no início da reunião. A conversa aparece aqui, separada por pessoa, "
             "e ao lado surgem as notas do seu vault ligadas ao que está sendo discutido.</p>"
             "<p>• <b>Reunião online</b> (Zoom, Teams, Meet, Slack): mantenha marcado <i>Som do computador</i>. "
             "Nenhum bot entra na reunião.<br>"
             "• <b>Reunião presencial</b>: desmarque <i>Som do computador</i>; só o microfone é gravado.<br>"
-            "• <b>Gravação que você já tem</b> (Plaud etc.): use <i>Abrir ▸ Arquivo de áudio</i>.</p>"
+            "• <b>Gravação que você já tem</b> (Plaud etc.): use <i>Abrir áudio</i>.</p>"
             "<p>Depois, use <b>Nomear vozes</b> uma vez: nas próximas reuniões as pessoas são reconhecidas sozinhas.</p>"
             "</div>").arg(muted.name()));
         return;
@@ -703,7 +690,7 @@ void MeetingAssistantDock::renderTranscript()
         transcriptView->verticalScrollBar()->setValue(scroll);
 }
 
-QString MeetingAssistantDock::contextText() const
+QString MeetingAssistantPage::contextText() const
 {
     QStringList parts;
     if (selectedTurn >= 0 && selectedTurn < turns.size()) {
@@ -721,7 +708,7 @@ QString MeetingAssistantDock::contextText() const
     return parts.join(QLatin1Char(' '));
 }
 
-void MeetingAssistantDock::updateSuggestions()
+void MeetingAssistantPage::updateSuggestions()
 {
     const QColor muted = mix(palette().color(QPalette::Text), palette().color(QPalette::Base), 0.55);
     QString scope;
@@ -799,7 +786,7 @@ void MeetingAssistantDock::updateSuggestions()
     participationLabel->setText(rows.join(QStringLiteral("<br>")));
 }
 
-void MeetingAssistantDock::handleLink(const QUrl &url)
+void MeetingAssistantPage::handleLink(const QUrl &url)
 {
     const QString s = url.toString();
     if (s.startsWith(QLatin1String("turn:"))) {
@@ -810,11 +797,11 @@ void MeetingAssistantDock::handleLink(const QUrl &url)
     }
     else if (s.startsWith(QLatin1String("note:"))) {
         const QString path = QUrl::fromPercentEncoding(s.mid(5).toUtf8());
-        if (!path.isEmpty()) window->openFile(path);
+        if (!path.isEmpty()) emit NotepadNextHub::instance()->openFileRequested(path, -1);
     }
 }
 
-void MeetingAssistantDock::saveAsNote()
+void MeetingAssistantPage::saveAsNote()
 {
     if (turns.isEmpty()) return;
     VaultIndex *index = NotepadNextHub::instance()->index();
@@ -883,5 +870,5 @@ void MeetingAssistantDock::saveAsNote()
     }
     f.write(md.toUtf8());
     f.close();
-    window->openFile(path);
+    emit NotepadNextHub::instance()->openFileRequested(path, -1);
 }

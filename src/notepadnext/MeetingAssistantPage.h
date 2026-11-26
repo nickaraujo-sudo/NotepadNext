@@ -3,10 +3,10 @@
  * Licença GPL-3.0 (a mesma do projeto original, dail8859/NotepadNext).
  */
 
-#ifndef MEETINGASSISTANTDOCK_H
-#define MEETINGASSISTANTDOCK_H
+#ifndef MEETINGASSISTANTPAGE_H
+#define MEETINGASSISTANTPAGE_H
 
-#include <QDockWidget>
+#include <QWidget>
 #include <QHash>
 #include <QJsonObject>
 #include <QPointer>
@@ -14,6 +14,7 @@
 
 class MainWindow;
 class NoteSuggester;
+class QAction;
 class QCheckBox;
 class QLabel;
 class QLineEdit;
@@ -28,12 +29,21 @@ class QUrl;
 // Aba "Meeting Assistant": grava a reunião (sem bot), mostra a transcrição com quem
 // falou e, ao lado, sugere ligações com as notas do vault.
 // O áudio é processado pelo voicelab (tools/voicelab), que roda no próprio Mac.
-class MeetingAssistantDock : public QDockWidget
+class MeetingAssistantPage : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit MeetingAssistantDock(MainWindow *window);
+    explicit MeetingAssistantPage(MainWindow *window);
+
+    // Ações da aba (aparecem na barra de ícones e no menu "Reunião")
+    QAction *recordAction;
+    QAction *stopAction;
+    QAction *openMeetingAction;
+    QAction *openAudioAction;
+    QAction *reanalyzeAction;
+    QAction *nameAction;
+    QAction *saveAction;
 
 private:
     struct Speaker {
@@ -81,13 +91,7 @@ private:
     NoteSuggester *suggester;
 
     QLineEdit *titleEdit;
-    QPushButton *recordButton;
-    QPushButton *stopButton;
     QCheckBox *systemAudioCheck;
-    QToolButton *openButton;
-    QPushButton *reanalyzeButton;
-    QPushButton *nameButton;
-    QPushButton *saveButton;
     QLabel *statusLabel;
     QProgressBar *micLevel;
     QProgressBar *sysLevel;
@@ -110,4 +114,4 @@ private:
     QHash<QString, QString> mentionedNotes; // título -> caminho
 };
 
-#endif // MEETINGASSISTANTDOCK_H
+#endif // MEETINGASSISTANTPAGE_H
