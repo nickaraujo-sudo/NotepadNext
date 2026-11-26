@@ -1,0 +1,84 @@
+name: voicelab (macOS)
+
+on:
+  push:
+    branches: [voicelab]
+    paths: ['tools/voicelab/**', '.github/workflows/voicelab.yml']
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        working-directory: tools/voicelab
+        run: |
+          swift --version
+          swift build -c release 2>&1 | tail -40
+
+      - name: Usage
+        working-directory: tools/voicelab
+        run: .build/release/voicelab ajuda
+
+      - name: Make a two-voice Portuguese dialogue (macOS TTS)
+        run: |
+          say -v '?' | grep -i -E 'pt_BR|pt-BR' || true
+          V1=$(say -v '?' | grep -i 'pt_BR' | head -1 | awk '{print $1}')
+          V2=$(say -v '?' | grep -i 'pt_BR' | sed -n 2p | awk '{print $1}')
+          [ -z "$V1" ] && V1=Samantha
+          [ -z "$V2" ] && V2=Daniel
+          echo "voices: $V1 / $V2"
+          mkdir -p /tmp/vl && cd /tmp/vl
+          lines=(
+            "1|Bom dia a todos. Vamos começar pela revisão do orçamento do terceiro trimestre."
+            "2|Perfeito. Eu trouxe os números de vendas da região sudeste, que cresceram doze por cento."
+            "1|Ótimo, mas precisamos entender por que os custos de logística subiram tanto."
+            "2|Desculpa interromper, mas a logística subiu por causa do novo contrato com a transportadora."
+            "1|Entendi. Então vamos renegociar esse contrato até o final do mês."
+            "2|Combinado. Eu preparo uma proposta e envio na sexta-feira."
+          )
+          i=0
+          for l in "${lines[@]}"; do
+            who=${l%%|*}; text=${l#*|}
+            v=$V1; [ "$who" = 2 ] && v=$V2
+            say -v "$v" -o part$i.aiff "$text"
+            afconvert -f WAVE -d LEI16@16000 part$i.aiff part$i.wav
+            i=$((i+1))
+          done
+          python3 - <<'PY'
+          import wave, glob
+          parts = sorted(glob.glob('/tmp/vl/part*.wav'), key=lambda p: int(p.split('part')[1].split('.')[0]))
+          out = wave.open('/tmp/vl/dialogo.wav', 'wb')
+          out.setnchannels(1); out.setsampwidth(2); out.setframerate(16000)
+          silence = b'\x00\x00' * 8000  # 0,5 s
+          for p in parts:
+              w = wave.open(p); out.writeframes(w.readframes(w.getnframes())); out.writeframes(silence)
+          out.close()
+          print('ok')
+          PY
+          ls -la /tmp/vl
+
+      - name: Analyze (both engines)
+        working-directory: tools/voicelab
+        run: .build/release/voicelab analisar /tmp/vl/dialogo.wav --motor ambos --titulo "Teste sintético"
+
+      - name: Name speakers, then re-analyze and check recognition
+        working-directory: tools/voicelab
+        run: |
+          printf "Ana\nBruno\n" | .build/release/voicelab nomear /tmp/vl/dialogo-voicelab
+          .build/release/voicelab vozes
+          .build/release/voicelab analisar /tmp/vl/dialogo.wav --motor nemotron --titulo "Teste 2"
+
+      - name: Show results
+        if: always()
+        run: |
+          for f in /tmp/vl/dialogo-voicelab/*.md; do echo "=== $f"; cat "$f"; done
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: voicelab-resultado
+          path: /tmp/vl/dialogo-voicelab
