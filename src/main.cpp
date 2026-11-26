@@ -24,6 +24,7 @@
 #include <QDataStream>
 
 #include "NotepadNextApplication.h"
+#include "NotepadNextHub.h"
 
 int main(int argc, char *argv[])
 {
@@ -32,7 +33,7 @@ int main(int argc, char *argv[])
     // Set these since other parts of the app references these
     QApplication::setOrganizationName("NotepadNext");
     QApplication::setApplicationName("NotepadNext");
-    QGuiApplication::setApplicationDisplayName("craftpad++");
+    QGuiApplication::setApplicationDisplayName("NotepadNext");
     QGuiApplication::setApplicationVersion(APP_VERSION);
 
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
@@ -54,6 +55,9 @@ int main(int argc, char *argv[])
 
 
     if(app.isPrimary()) {
+        // Nomes antigos (craftpad) -> NotepadNext: configurações, pastas e banco de vozes
+        NotepadNextHub::migrateLegacyNames();
+
         app.init();
 
         return app.exec();

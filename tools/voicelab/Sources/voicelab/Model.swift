@@ -1,4 +1,4 @@
-// craftpad++ voicelab — tipos do resultado de uma reunião.
+// NotepadNext voicelab — tipos do resultado de uma reunião.
 
 import Foundation
 

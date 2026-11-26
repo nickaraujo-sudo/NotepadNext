@@ -169,40 +169,40 @@ qt_add_executable(NotepadNext
 	docks/LuaConsoleDock.ui
 	docks/MarkdownPreviewDock.cpp
 	docks/MarkdownPreviewDock.h
-	craftpad/CraftPadHub.cpp
-	craftpad/CraftPadHub.h
-	craftpad/VaultIndex.cpp
-	craftpad/VaultIndex.h
-	craftpad/VaultDock.cpp
-	craftpad/VaultDock.h
-	craftpad/BacklinksDock.cpp
-	craftpad/BacklinksDock.h
-	craftpad/WikiLinkDecorator.cpp
-	craftpad/WikiLinkDecorator.h
-	craftpad/GraphView.cpp
-	craftpad/GraphView.h
-	craftpad/GraphDock.cpp
-	craftpad/GraphDock.h
-	craftpad/MarkdownTable.cpp
-	craftpad/MarkdownTable.h
-	craftpad/FormulaEngine.cpp
-	craftpad/FormulaEngine.h
-	craftpad/MarkdownRenderer.cpp
-	craftpad/MarkdownRenderer.h
-	craftpad/MarkdownCommands.cpp
-	craftpad/MarkdownCommands.h
-	craftpad/VaultTables.cpp
-	craftpad/VaultTables.h
-	craftpad/ImageSupport.cpp
-	craftpad/ImageSupport.h
-	craftpad/ThemeManager.cpp
-	craftpad/ThemeManager.h
-	craftpad/FormatController.cpp
-	craftpad/FormatController.h
-	craftpad/NoteSuggester.cpp
-	craftpad/NoteSuggester.h
-	craftpad/MeetingAssistantDock.cpp
-	craftpad/MeetingAssistantDock.h
+	notepadnext/NotepadNextHub.cpp
+	notepadnext/NotepadNextHub.h
+	notepadnext/VaultIndex.cpp
+	notepadnext/VaultIndex.h
+	notepadnext/VaultDock.cpp
+	notepadnext/VaultDock.h
+	notepadnext/BacklinksDock.cpp
+	notepadnext/BacklinksDock.h
+	notepadnext/WikiLinkDecorator.cpp
+	notepadnext/WikiLinkDecorator.h
+	notepadnext/GraphView.cpp
+	notepadnext/GraphView.h
+	notepadnext/GraphDock.cpp
+	notepadnext/GraphDock.h
+	notepadnext/MarkdownTable.cpp
+	notepadnext/MarkdownTable.h
+	notepadnext/FormulaEngine.cpp
+	notepadnext/FormulaEngine.h
+	notepadnext/MarkdownRenderer.cpp
+	notepadnext/MarkdownRenderer.h
+	notepadnext/MarkdownCommands.cpp
+	notepadnext/MarkdownCommands.h
+	notepadnext/VaultTables.cpp
+	notepadnext/VaultTables.h
+	notepadnext/ImageSupport.cpp
+	notepadnext/ImageSupport.h
+	notepadnext/ThemeManager.cpp
+	notepadnext/ThemeManager.h
+	notepadnext/FormatController.cpp
+	notepadnext/FormatController.h
+	notepadnext/NoteSuggester.cpp
+	notepadnext/NoteSuggester.h
+	notepadnext/MeetingAssistantDock.cpp
+	notepadnext/MeetingAssistantDock.h
 	docks/SearchResultsDock.cpp
 	docks/SearchResultsDock.h
 	docks/SearchResultsDock.ui
@@ -241,7 +241,7 @@ qt_add_translations(NotepadNext
 
 target_include_directories(NotepadNext
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/craftpad
+        ${CMAKE_CURRENT_SOURCE_DIR}/notepadnext
         ${CMAKE_CURRENT_SOURCE_DIR}/decorators
         ${CMAKE_CURRENT_SOURCE_DIR}/dialogs
         ${CMAKE_CURRENT_SOURCE_DIR}/docks

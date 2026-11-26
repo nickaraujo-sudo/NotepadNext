@@ -1,4 +1,4 @@
-// craftpad++ voicelab — testes das partes sem modelo (rodados no CI: voicelab teste-interno).
+// NotepadNext voicelab — testes das partes sem modelo (rodados no CI: voicelab teste-interno).
 
 import Foundation
 

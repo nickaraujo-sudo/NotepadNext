@@ -52,7 +52,7 @@ const SingleApplication::Options opts = SingleApplication::SecondaryNotification
 
 void parseCommandLine(QCommandLineParser &parser, const QStringList &args)
 {
-    parser.setApplicationDescription("craftpad++");
+    parser.setApplicationDescription("NotepadNext");
     parser.addHelpOption();
     parser.addVersionOption();
 

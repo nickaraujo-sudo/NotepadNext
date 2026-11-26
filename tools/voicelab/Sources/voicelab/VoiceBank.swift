@@ -1,4 +1,4 @@
-// craftpad++ voicelab — banco de vozes: guarda a assinatura de voz de cada pessoa
+// NotepadNext voicelab — banco de vozes: guarda a assinatura de voz de cada pessoa
 // para reconhecê-la nas próximas reuniões, sem precisar dar o nome de novo.
 
 import Foundation
@@ -13,7 +13,7 @@ struct VoiceEntry: Codable {
 final class VoiceBank {
     static var defaultURL: URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        return base.appendingPathComponent("craftpad", isDirectory: true).appendingPathComponent("vozes.json")
+        return base.appendingPathComponent("NotepadNext", isDirectory: true).appendingPathComponent("vozes.json")
     }
 
     let url: URL

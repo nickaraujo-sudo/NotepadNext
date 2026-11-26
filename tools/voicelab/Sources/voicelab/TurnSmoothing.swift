@@ -1,4 +1,4 @@
-// craftpad++ voicelab — ajuste das fronteiras entre falantes.
+// NotepadNext voicelab — ajuste das fronteiras entre falantes.
 //
 // A troca de falante e o tempo das palavras às vezes ficam desencontrados em uma ou duas
 // palavras. Usa a pontuação para devolver cada palavra à frase a que ela pertence:

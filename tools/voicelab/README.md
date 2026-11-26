@@ -1,4 +1,4 @@
-# voicelab — protótipo de teste (craftpad++ Notetaker / Meeting Assistant)
+# voicelab — protótipo de teste (NotepadNext Notetaker / Meeting Assistant)
 
 Grava reuniões **sem bot**, separa quem falou o quê (cada interrupção vira uma fala) e
 **guarda a voz de cada pessoa** para reconhecê-la nas próximas reuniões. Tudo roda no Mac,
@@ -41,7 +41,7 @@ para o Terminal. Se recusar sem querer: Ajustes do Sistema ▸ Privacidade e Seg
 | Dar nome às vozes depois da análise | `voicelab nomear <pasta>` |
 | Ver ou apagar vozes guardadas | `voicelab vozes` / `voicelab vozes --esquecer "Nome"` |
 
-`gravar` para com **Enter** (ou Ctrl+C) e já analisa. As gravações ficam em `~/craftpad-reunioes/`.
+`gravar` para com **Enter** (ou Ctrl+C) e já analisa. As gravações ficam em `~/NotepadNext-reunioes/`.
 
 Opções de análise: `--motor nemotron|parakeet|ambos` (padrão: ambos, para comparar),
 `--max-falantes N`, `--limiar 0.62` (semelhança mínima para reconhecer uma voz), `--titulo "..."`.
@@ -52,10 +52,10 @@ Na pasta da reunião:
 
 - `transcricao-nemotron.md` e `transcricao-parakeet.md` — uma por motor, para comparar
 - `relatorio.md` — tempos, falantes encontrados e a semelhança de cada um com o banco de vozes
-- `resultado.json` — tudo em formato estruturado (é o que o craftpad++ vai ler)
+- `resultado.json` — tudo em formato estruturado (é o que o NotepadNext vai ler)
 - `microfone.caf`, `sistema.caf`, `sessao.json` — o áudio original de cada canal
 
-O banco de vozes fica em `~/Library/Application Support/craftpad/vozes.json`.
+O banco de vozes fica em `~/Library/Application Support/NotepadNext/vozes.json`.
 
 ## Roteiro de teste sugerido
 

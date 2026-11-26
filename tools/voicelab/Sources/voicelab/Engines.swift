@@ -1,4 +1,4 @@
-// craftpad++ voicelab — motores de reconhecimento de fala (português), todos locais.
+// NotepadNext voicelab — motores de reconhecimento de fala (português), todos locais.
 
 import FluidAudio
 import Foundation

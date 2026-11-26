@@ -1,4 +1,4 @@
-// craftpad++ voicelab — eventos em JSON (uma linha cada) para o craftpad++ acompanhar
+// NotepadNext voicelab — eventos em JSON (uma linha cada) para o NotepadNext acompanhar
 // a gravação e a análise. Ativado com --json; sem ele, a saída é só para pessoas.
 
 import Foundation

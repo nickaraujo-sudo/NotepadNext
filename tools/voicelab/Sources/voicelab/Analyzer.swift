@@ -1,4 +1,4 @@
-// craftpad++ voicelab — análise: cancelamento de eco, separação de falantes,
+// NotepadNext voicelab — análise: cancelamento de eco, separação de falantes,
 // transcrição e reconhecimento das vozes conhecidas.
 
 import FluidAudio

@@ -1,5 +1,5 @@
-// craftpad++ voicelab — arquivos de saída: transcrição em Markdown (pronta para o
-// Obsidian e para o craftpad++), relatório de avaliação e resultado.json.
+// NotepadNext voicelab — arquivos de saída: transcrição em Markdown (pronta para o
+// Obsidian e para o NotepadNext), relatório de avaliação e resultado.json.
 
 import Foundation
 

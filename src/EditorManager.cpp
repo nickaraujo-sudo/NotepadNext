@@ -411,7 +411,7 @@ void EditorManager::setupEditor(ScintillaNext *editor)
 
     new HTMLAutoCompleteDecorator(editor);
 
-    // CraftPad: [[links]], #tags e autocompletar no estilo Obsidian
+    // NotepadNext: [[links]], #tags e autocompletar no estilo Obsidian
     WikiLinkDecorator *wl = new WikiLinkDecorator(editor);
     wl->setEnabled(true);
 }

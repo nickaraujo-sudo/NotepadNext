@@ -1,5 +1,5 @@
 /*
- * This file is part of Notepad Next (craftpad++ fork).
+ * This file is part of Notepad Next (NotepadNext fork).
  *
  * Notepad Next is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -11,7 +11,7 @@
 
 #include "MainWindow.h"
 #include "ScintillaNext.h"
-#include "CraftPadHub.h"
+#include "NotepadNextHub.h"
 #include "VaultIndex.h"
 #include "VaultTables.h"
 #include "ThemeManager.h"
@@ -229,7 +229,7 @@ void MarkdownPreviewDock::renderPreview()
     const QString noteDir = editor->isFile() ? editor->getFileInfo().absolutePath() : QString();
     QStringList paths;
     if (!noteDir.isEmpty()) paths << noteDir;
-    if (CraftPadHub::instance()->index()->hasRoot()) paths << CraftPadHub::instance()->index()->root();
+    if (NotepadNextHub::instance()->index()->hasRoot()) paths << NotepadNextHub::instance()->index()->root();
     view->setSearchPaths(paths);
 
     const QString selfPath = editor->getFilePath();
@@ -400,13 +400,13 @@ void MarkdownPreviewDock::insertDroppedImage(const QMimeData *mime, int position
 
 void MarkdownPreviewDock::handleLink(const QUrl &url)
 {
-    if (url.scheme() == QLatin1String("craftpad")) {
+    if (url.scheme() == QLatin1String("notepadnext")) {
         // [[Nota#Seção]] abre a nota
         const QString target = QUrl::fromPercentEncoding(url.toString().mid(9).toUtf8()).section(QLatin1Char('#'), 0, 0).trimmed();
-        emit CraftPadHub::instance()->openNoteRequested(target, editor ? editor->getFilePath() : QString());
+        emit NotepadNextHub::instance()->openNoteRequested(target, editor ? editor->getFilePath() : QString());
     }
-    else if (url.scheme() == QLatin1String("craftpad-tag")) {
-        emit CraftPadHub::instance()->tagRequested(url.path());
+    else if (url.scheme() == QLatin1String("notepadnext-tag")) {
+        emit NotepadNextHub::instance()->tagRequested(url.path());
     }
     else {
         QDesktopServices::openUrl(url);

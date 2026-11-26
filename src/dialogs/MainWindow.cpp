@@ -67,7 +67,7 @@
 #include "DebugLogDock.h"
 #include "FileListDock.h"
 #include "MarkdownPreviewDock.h"
-#include "CraftPadHub.h"
+#include "NotepadNextHub.h"
 #include "FormatController.h"
 #include "MeetingAssistantDock.h"
 #include "VaultIndex.h"
@@ -923,7 +923,7 @@ MainWindow::MainWindow(NotepadNextApplication *app) :
         QMessageBox::about(this, QString(),
                             QStringLiteral("<h3>%1 v%2 %3</h3>"
                                     "<p>%4</p>"
-                                    "<p>Baseado no <a href=\"https://github.com/dail8859/NotepadNext\">Notepad Next</a>.</p>"
+                                    "<p>Fork do projeto original <a href=\"https://github.com/dail8859/NotepadNext\">dail8859/NotepadNext</a>, com notas no estilo Obsidian, tabelas, temas e Meeting Assistant.</p>"
                                     R"(<p>This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.</p> <p>This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.</p> <p>You should have received a copy of the GNU General Public License along with this program. If not, see &lt;<a href="https://www.gnu.org/licenses/">https://www.gnu.org/licenses/</a>&gt;.</p>)")
                                 .arg(QApplication::applicationDisplayName(), APP_VERSION, APP_DISTRIBUTION, QStringLiteral(APP_COPYRIGHT).toHtmlEscaped()));
     });
@@ -1012,7 +1012,7 @@ MainWindow::MainWindow(NotepadNextApplication *app) :
     addDockWidget(Qt::LeftDockWidgetArea, fileListDock);
     ui->menuView->addAction(fileListDock->toggleViewAction());
 
-    setupCraftPad();
+    setupNotepadNextFeatures();
 
     connect(app->getSettings(), &ApplicationSettings::showMenuBarChanged, this, [this](bool showMenuBar) {
         // Don't 'hide' it, else the actions won't be enabled
@@ -2429,11 +2429,11 @@ void MainWindow::languageMenuTriggered()
 }
 
 // ---------------------------------------------------------------------------
-// CraftPad: vault no estilo Obsidian (pastas + tags, links, backlinks, grafo)
+// NotepadNext: vault no estilo Obsidian (pastas + tags, links, backlinks, grafo)
 // ---------------------------------------------------------------------------
-void MainWindow::setupCraftPad()
+void MainWindow::setupNotepadNextFeatures()
 {
-    CraftPadHub *hub = CraftPadHub::instance();
+    NotepadNextHub *hub = NotepadNextHub::instance();
     VaultIndex *index = hub->index();
 
     ui->menuView->addSeparator();
@@ -2451,7 +2451,7 @@ void MainWindow::setupCraftPad()
     markdownPreviewDock->toggleViewAction()->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_M));
     ui->menuView->addAction(markdownPreviewDock->toggleViewAction());
 
-    // craftpad++: menu e barra de formatação, temas e imagens
+    // NotepadNext: menu e barra de formatação, temas e imagens
     new FormatController(this, markdownPreviewDock, ui->menuBar, ui->menuEncodings->menuAction(), ui->menuView);
 
     // Backlinks, embaixo da prévia
@@ -2506,7 +2506,7 @@ void MainWindow::setupCraftPad()
     ui->menuFile->insertAction(ui->menuFile->actions().value(2), openVault);
 
     // Abrir arquivo (vindo do painel, do grafo ou dos backlinks)
-    connect(hub, &CraftPadHub::openFileRequested, this, [this](const QString &path, int line) {
+    connect(hub, &NotepadNextHub::openFileRequested, this, [this](const QString &path, int line) {
         openFile(path);
         ScintillaNext *editor = currentEditor();
         if (line >= 0 && editor && editor->getFilePath() == path) {
@@ -2517,7 +2517,7 @@ void MainWindow::setupCraftPad()
     });
 
     // Abrir [[link]]: cria a nota se ela ainda não existe (como o Obsidian)
-    connect(hub, &CraftPadHub::openNoteRequested, this, [this, index](const QString &target, const QString &fromPath) {
+    connect(hub, &NotepadNextHub::openNoteRequested, this, [this, index](const QString &target, const QString &fromPath) {
         QString path = index->resolveLink(target);
         if (path.isEmpty()) {
             if (target.startsWith(QLatin1Char('\x01'))) {

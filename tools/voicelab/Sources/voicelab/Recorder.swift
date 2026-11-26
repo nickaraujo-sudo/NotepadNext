@@ -1,4 +1,4 @@
-// craftpad++ voicelab — gravação sem bot: microfone e som do computador em canais separados.
+// NotepadNext voicelab — gravação sem bot: microfone e som do computador em canais separados.
 //
 // - Microfone: AVAudioEngine (quem está na sala, inclusive você).
 // - Som do computador: ScreenCaptureKit (Zoom, Teams, Meet, Slack...), sem driver virtual
@@ -120,7 +120,7 @@ extension CMSampleBuffer {
 final class SystemAudioCapture: NSObject, SCStreamOutput, SCStreamDelegate {
     let writer: TrackWriter
     private var stream: SCStream?
-    private let queue = DispatchQueue(label: "craftpad.voicelab.system-audio")
+    private let queue = DispatchQueue(label: "notepadnext.voicelab.system-audio")
 
     init(writer: TrackWriter) {
         self.writer = writer

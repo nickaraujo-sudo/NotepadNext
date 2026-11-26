@@ -5,7 +5,7 @@
 	<key>CFBundleExecutable</key>
 	<string>NotepadNext</string>
 	<key>CFBundleName</key>
-	<string>craftpad++</string>
+	<string>NotepadNext</string>
 	<key>CFBundleIconFile</key>
 	<string>NotepadNext.icns</string>
 	<key>CFBundleIdentifier</key>
@@ -17,9 +17,9 @@
 	<key>LSMinimumSystemVersion</key>
 	<string>${MACOSX_DEPLOYMENT_TARGET}</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>O Meeting Assistant do craftpad++ grava o microfone para transcrever reuniões no próprio Mac.</string>
+	<string>O Meeting Assistant do NotepadNext grava o microfone para transcrever reuniões no próprio Mac.</string>
 	<key>NSAudioCaptureUsageDescription</key>
-	<string>O Meeting Assistant do craftpad++ grava o som das reuniões online (Zoom, Teams, Meet) para transcrevê-las no próprio Mac.</string>
+	<string>O Meeting Assistant do NotepadNext grava o som das reuniões online (Zoom, Teams, Meet) para transcrevê-las no próprio Mac.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>NSSupportsAutomaticGraphicsSwitching</key>

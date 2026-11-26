@@ -14,7 +14,7 @@
    <bool>true</bool>
   </property>
   <property name="windowTitle">
-   <string>craftpad++[*]</string>
+   <string>NotepadNext[*]</string>
   </property>
   <widget class="QWidget" name="centralWidget">
    <widget class="QPushButton" name="pushExitFullScreen">
@@ -806,7 +806,7 @@
      <normaloff>:/icons/newfile.png</normaloff>:/icons/newfile.png</iconset>
    </property>
    <property name="text">
-    <string>Sobre o craftpad++</string>
+    <string>Sobre o NotepadNext</string>
    </property>
    <property name="menuRole">
     <enum>QAction::AboutRole</enum>

@@ -164,7 +164,7 @@ signals:
     void reloaded();
 
 public:
-    // craftpad++: imagens arrastadas para o editor (Finder ou navegador)
+    // NotepadNext: imagens arrastadas para o editor (Finder ou navegador)
     static std::function<bool(ScintillaNext *, const QMimeData *)> canDropImage;
     static std::function<bool(ScintillaNext *, const QMimeData *, int)> dropImage;
 

@@ -1,5 +1,5 @@
-// craftpad++ voicelab — correção de nomes próprios e siglas a partir de uma lista de termos
-// (o craftpad++ gera essa lista com os títulos e tags do vault).
+// NotepadNext voicelab — correção de nomes próprios e siglas a partir de uma lista de termos
+// (o NotepadNext gera essa lista com os títulos e tags do vault).
 //
 // A correção é feita no texto, de forma conservadora: só troca palavras muito parecidas com
 // um termo da lista e, fora correspondências exatas, só palavras com maiúscula (nomes próprios).

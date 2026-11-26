@@ -1,4 +1,4 @@
-// craftpad++ voicelab — protótipo de teste do Notetaker / Meeting Assistant.
+// NotepadNext voicelab — protótipo de teste do Notetaker / Meeting Assistant.
 //
 //   voicelab gravar [pasta] [--sem-sistema] [--sem-analise] [opções de análise]
 //   voicelab analisar <pasta-ou-arquivo> [--motor nemotron|parakeet|ambos] [--max-falantes N] [--limiar 0.62] [--titulo "..."]
@@ -10,13 +10,13 @@
 import Foundation
 
 let usage = """
-    craftpad++ voicelab — transcrição de reuniões com separação de falantes (protótipo)
+    NotepadNext voicelab — transcrição de reuniões com separação de falantes (protótipo)
 
-    Opção geral: --json  (eventos em JSON, usado pelo craftpad++)
+    Opção geral: --json  (eventos em JSON, usado pelo NotepadNext)
 
     Comandos:
       gravar [pasta]           Grava microfone + som do computador até você apertar Enter,
-                               depois analisa. Sem pasta, cria ~/craftpad-reunioes/AAAA-MM-DD_HHhMM.
+                               depois analisa. Sem pasta, cria ~/NotepadNext-reunioes/AAAA-MM-DD_HHhMM.
           --sem-sistema        Só o microfone (reunião presencial; não pede permissão de tela)
           --sem-analise        Só grava
           --sem-ao-vivo        Não mostra o rascunho da transcrição durante a gravação
@@ -86,7 +86,7 @@ func defaultRecordingFolder() -> URL {
     let f = DateFormatter()
     f.dateFormat = "yyyy-MM-dd_HH'h'mm"
     return FileManager.default.homeDirectoryForCurrentUser
-        .appendingPathComponent("craftpad-reunioes", isDirectory: true)
+        .appendingPathComponent("NotepadNext-reunioes", isDirectory: true)
         .appendingPathComponent(f.string(from: Date()), isDirectory: true)
 }
 
@@ -104,7 +104,7 @@ func nameSpeakers(folder: URL, preset: [String: String]) throws {
     let bank = VoiceBank()
     let engine = result.engines.first
 
-    // Modo sem perguntas (usado pelo craftpad++): chave=Nome; nome vazio = não guardar
+    // Modo sem perguntas (usado pelo NotepadNext): chave=Nome; nome vazio = não guardar
     if !preset.isEmpty {
         for i in result.speakers.indices {
             guard let name = preset[result.speakers[i].key] else { continue }
@@ -162,6 +162,29 @@ func nameSpeakers(folder: URL, preset: [String: String]) throws {
 
 // MARK: - Execução
 
+/// Nome antigo do app (craftpad) -> NotepadNext: pasta das reuniões e banco de vozes.
+func migrateLegacyNames() {
+    let fm = FileManager.default
+    let home = fm.homeDirectoryForCurrentUser
+    let oldMeetings = home.appendingPathComponent("craftpad-reunioes", isDirectory: true)
+    let newMeetings = home.appendingPathComponent("NotepadNext-reunioes", isDirectory: true)
+    if fm.fileExists(atPath: oldMeetings.path), !fm.fileExists(atPath: newMeetings.path) {
+        try? fm.moveItem(at: oldMeetings, to: newMeetings)
+    }
+    guard let support = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else { return }
+    let oldDir = support.appendingPathComponent("craftpad", isDirectory: true)
+    let newDir = support.appendingPathComponent("NotepadNext", isDirectory: true)
+    guard let names = try? fm.contentsOfDirectory(atPath: oldDir.path) else { return }
+    try? fm.createDirectory(at: newDir, withIntermediateDirectories: true)
+    for name in names where !fm.fileExists(atPath: newDir.appendingPathComponent(name).path) {
+        try? fm.moveItem(at: oldDir.appendingPathComponent(name), to: newDir.appendingPathComponent(name))
+    }
+    if (try? fm.contentsOfDirectory(atPath: oldDir.path))?.isEmpty == true {
+        try? fm.removeItem(at: oldDir)
+    }
+}
+
+migrateLegacyNames()
 let args = Array(CommandLine.arguments.dropFirst())
 Events.enabled = args.contains("--json")
 let command = args.first ?? "ajuda"

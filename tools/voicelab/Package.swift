@@ -1,5 +1,5 @@
 // swift-tools-version: 5.9
-// craftpad++ voicelab — protótipo de transcrição de reuniões com separação de falantes.
+// NotepadNext voicelab — protótipo de transcrição de reuniões com separação de falantes.
 // Tudo roda no Mac (Neural Engine), via FluidAudio (Apache 2.0).
 import PackageDescription
 
