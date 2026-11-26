@@ -19,9 +19,11 @@ jobs:
           swift --version
           swift build -c release 2>&1 | tail -40
 
-      - name: Usage
+      - name: Usage and self-tests
         working-directory: tools/voicelab
-        run: .build/release/voicelab ajuda
+        run: |
+          .build/release/voicelab ajuda
+          .build/release/voicelab teste-interno
 
       - name: Make a two-voice Portuguese dialogue (macOS TTS)
         run: |
@@ -63,12 +65,15 @@ jobs:
 
       - name: Analyze (both engines)
         working-directory: tools/voicelab
-        run: .build/release/voicelab analisar /tmp/vl/dialogo.wav --motor ambos --titulo "Teste sintético"
+        run: |
+          printf "Illumia\nAccenture\nPIS/Cofins\n" > /tmp/vl/vocab.txt
+          .build/release/voicelab analisar /tmp/vl/dialogo.wav --motor ambos --vocabulario /tmp/vl/vocab.txt --titulo "Teste sintético" --json
 
       - name: Name speakers, then re-analyze and check recognition
         working-directory: tools/voicelab
         run: |
           printf "Ana\nBruno\n" | .build/release/voicelab nomear /tmp/vl/dialogo-voicelab
+          .build/release/voicelab nomear /tmp/vl/dialogo-voicelab --definir "presencial:S1=Ana Maria" --json
           .build/release/voicelab vozes
           .build/release/voicelab analisar /tmp/vl/dialogo.wav --motor nemotron --titulo "Teste 2"
 

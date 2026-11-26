@@ -68,7 +68,7 @@ func makeEngines(_ spec: String) throws -> [SpeechEngine] {
     switch spec.lowercased() {
     case "nemotron": return [NemotronEngine()]
     case "parakeet": return [ParakeetEngine()]
-    case "ambos", "todos", "both": return [NemotronEngine(), ParakeetEngine()]
+    case "ambos", "todos", "both": return [ParakeetEngine(), NemotronEngine()]
     default: throw VoicelabError.message("Motor desconhecido: \(spec). Use nemotron, parakeet ou ambos.")
     }
 }

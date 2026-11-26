@@ -7,6 +7,7 @@
 import AVFoundation
 import CoreMedia
 import Foundation
+import FluidAudio
 import ScreenCaptureKit
 
 /// Escreve um canal em disco e guarda o instante (relógio do sistema) do primeiro trecho.
@@ -19,6 +20,10 @@ final class TrackWriter {
     private(set) var peak: Float = 0
     private(set) var failure: String?
     private let lock = NSLock()
+    // Áudio ainda não transcrito ao vivo (mono, na taxa original)
+    private var pending: [Float] = []
+    private var pendingStartFrame: Int64 = 0
+    var keepPending = false
 
     init(url: URL) {
         self.url = url
@@ -37,13 +42,30 @@ final class TrackWriter {
                 sampleRate = format.sampleRate
             }
             try file?.write(from: buffer)
-            frames += Int64(buffer.frameLength)
             if let data = buffer.floatChannelData {
                 let n = Int(buffer.frameLength)
                 for i in stride(from: 0, to: n, by: 64) {
                     peak = max(peak, abs(data[0][i]))
                 }
+                if keepPending {
+                    if pending.isEmpty { pendingStartFrame = frames }
+                    let channels = Int(buffer.format.channelCount)
+                    if buffer.format.isInterleaved {
+                        for i in 0..<n {
+                            var sum: Float = 0
+                            for c in 0..<channels { sum += data[0][i * channels + c] }
+                            pending.append(sum / Float(channels))
+                        }
+                    } else {
+                        for i in 0..<n {
+                            var sum: Float = 0
+                            for c in 0..<channels { sum += data[c][i] }
+                            pending.append(sum / Float(channels))
+                        }
+                    }
+                }
             }
+            frames += Int64(buffer.frameLength)
         } catch {
             failure = error.localizedDescription
         }
@@ -56,6 +78,17 @@ final class TrackWriter {
     }
 
     var seconds: Double { sampleRate > 0 ? Double(frames) / sampleRate : 0 }
+
+    /// Pega o áudio ainda não transcrito: amostras, taxa e instante (relógio do sistema) do início.
+    func takePending() -> (samples: [Float], rate: Double, startHost: Double)? {
+        lock.lock()
+        defer { lock.unlock() }
+        guard !pending.isEmpty, sampleRate > 0, let first = firstHostSeconds else { return nil }
+        let chunk = pending
+        let start = first + Double(pendingStartFrame) / sampleRate
+        pending.removeAll(keepingCapacity: true)
+        return (chunk, sampleRate, start)
+    }
 
     /// Nível recente (para o medidor na tela); zera depois de ler.
     func takePeak() -> Float {
@@ -227,14 +260,25 @@ final class StopSignal {
 }
 
 enum Recorder {
-    /// Grava até Enter/Ctrl+C. Devolve a pasta da reunião.
-    static func record(into folder: URL, captureSystem: Bool) async throws -> URL {
+    /// Grava até Enter/Ctrl+C. Com `live`, vai transcrevendo trechos durante a gravação
+    /// (rascunho por canal, sem separar falantes; a versão final vem na análise).
+    static func record(into folder: URL, captureSystem: Bool, live: Bool, vocabulary: Vocabulary?) async throws -> URL {
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
 
         let micWriter = TrackWriter(url: folder.appendingPathComponent("microfone.caf"))
         let sysWriter = TrackWriter(url: folder.appendingPathComponent("sistema.caf"))
+        micWriter.keepPending = live
+        sysWriter.keepPending = live
         let mic = MicrophoneCapture(writer: micWriter)
         let system = captureSystem ? SystemAudioCapture(writer: sysWriter) : nil
+
+        var liveEngine: ParakeetEngine?
+        if live {
+            Events.stage("⏳ Carregando o modelo de transcrição ao vivo...")
+            let engine = ParakeetEngine()
+            try await engine.prepare()
+            liveEngine = engine
+        }
 
         try await mic.start()
         if let system {
@@ -251,28 +295,65 @@ enum Recorder {
         say(captureSystem ? "    Canais: microfone (sala) + som do computador (reunião online)"
                           : "    Canal: só microfone (sala)")
         say("    Pressione Enter (ou Ctrl+C) para parar.\n")
+        Events.emit("gravando", ["pasta": folder.path, "sistema": captureSystem])
 
-        // Medidor simples de nível a cada segundo
+        // Medidor de nível a cada segundo
         let meter = Task {
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
                 let m = micWriter.takePeak()
                 let s = sysWriter.takePeak()
-                let elapsed = timestamp(Date().timeIntervalSince(started))
+                let elapsed = Date().timeIntervalSince(started)
+                if Events.enabled {
+                    Events.emit("nivel", ["tempo": elapsed, "microfone": Double(m), "sistema": Double(s)])
+                    continue
+                }
                 let bar: (Float) -> String = { level in
                     let n = min(20, Int(level * 40))
                     return String(repeating: "█", count: n) + String(repeating: "·", count: 20 - n)
                 }
                 let line = captureSystem
-                    ? "\r  \(elapsed)  mic \(bar(m))  sistema \(bar(s))  "
-                    : "\r  \(elapsed)  mic \(bar(m))  "
+                    ? "\r  \(timestamp(elapsed))  mic \(bar(m))  sistema \(bar(s))  "
+                    : "\r  \(timestamp(elapsed))  mic \(bar(m))  "
                 FileHandle.standardError.write(line.data(using: .utf8)!)
+            }
+        }
+
+        // Transcrição ao vivo a cada ~10 s
+        let liveTask = Task {
+            guard let engine = liveEngine else { return }
+            let converter = AudioConverter()
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 10_000_000_000)
+                let zero = [micWriter.firstHostSeconds, sysWriter.firstHostSeconds].compactMap { $0 }.min() ?? 0
+                for (name, writer) in [("presencial", micWriter), ("remoto", sysWriter)] {
+                    guard let chunk = writer.takePending(), Double(chunk.samples.count) > chunk.rate * 0.5 else { continue }
+                    guard rms(chunk.samples) > 0.003 else { continue } // silêncio
+                    do {
+                        let samples = try converter.resample(chunk.samples, from: chunk.rate)
+                        var words = try await engine.transcribe(samples)
+                        if let vocabulary { words = vocabulary.correct(words) }
+                        let text = words.map(\.text).joined(separator: " ")
+                        guard !text.isEmpty else { continue }
+                        let start = chunk.startHost - zero
+                        let end = start + Double(chunk.samples.count) / chunk.rate
+                        Events.emit("trecho", ["canal": name, "inicio": start, "fim": end, "texto": text])
+                        if !Events.enabled {
+                            say("\n  [\(timestamp(start))] (\(name)) \(text)")
+                        }
+                    } catch {
+                        say("⚠️  Transcrição ao vivo falhou: \(error.localizedDescription)")
+                    }
+                }
             }
         }
 
         await StopSignal().wait()
         meter.cancel()
+        liveTask.cancel()
+        _ = await liveTask.value
         say("\n⏹  Parando...")
+        Events.emit("parado")
 
         mic.stop()
         await system?.stop()

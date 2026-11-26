@@ -5,7 +5,8 @@ import FluidAudio
 import Foundation
 
 struct AnalyzeOptions {
-    var engines = "ambos"
+    var engines = "parakeet"
+    var vocabulary: Vocabulary?
     var maxSpeakers: Int?
     var threshold: Float = 0.62     // semelhança mínima para reconhecer uma voz
     var title: String?
@@ -66,7 +67,7 @@ enum Analyzer {
             if !mic.isEmpty {
                 if systemActive {
                     // O microfone também capta o que sai dos alto-falantes: remove esse eco
-                    say("🔇 Removendo o eco do som do computador no microfone...")
+                    Events.stage("🔇 Removendo o eco do som do computador no microfone...")
                     let started = Date()
                     let vqe = try await LocalVqeManager()
                     var reference = sys
@@ -102,7 +103,7 @@ enum Analyzer {
                    channels.map(\.name).joined(separator: " + ")))
 
         // 1. Quem falou quando (separação de falantes)
-        say("👥 Separando os falantes...")
+        Events.stage("👥 Separando os falantes...")
         let diarStart = Date()
         var config = OfflineDiarizerConfig(segmentationStepRatio: 0.1) // passos curtos: pega interrupções rápidas
         if let limit = options.maxSpeakers {
@@ -147,12 +148,13 @@ enum Analyzer {
         // 3. Transcrição com cada motor
         var engineResults: [EngineResult] = []
         for engine in try makeEngines(options.engines) {
-            say("📝 Transcrevendo com \(engine.title)...")
+            Events.stage("📝 Transcrevendo com \(engine.title)...")
             let start = Date()
             try await engine.prepare()
             var turns: [Turn] = []
             for d in diarized {
-                let w = try await engine.transcribe(d.channel.samples)
+                var w = try await engine.transcribe(d.channel.samples)
+                if let vocabulary = options.vocabulary { w = vocabulary.correct(w) }
                 turns += buildTurns(words: w, segments: d.segments, channel: d.channel)
             }
             turns.sort { $0.start < $1.start }
@@ -175,6 +177,7 @@ enum Analyzer {
             notes: notes
         )
         try Output.write(result, to: folder)
+        Events.emit("pronto", ["pasta": folder.path])
         return folder
     }
 
@@ -216,7 +219,7 @@ enum Analyzer {
     /// que a contém (normalmente é quem interrompeu).
     private static func buildTurns(words: [Word], segments: [TimedSpeakerSegment], channel: Channel) -> [Turn] {
         guard !words.isEmpty else { return [] }
-        var turns: [Turn] = []
+        var groups: [WordGroup] = []
         var lastSpeaker: String?
 
         for w in words {
@@ -242,17 +245,17 @@ enum Analyzer {
                 }
             }
             let key = "\(channel.name):\(speaker ?? lastSpeaker ?? "?")"
-
-            if var last = turns.last, last.speakerKey == key, w.start - last.end < 2.0 {
-                last.text += " " + w.text
-                last.end = w.end
-                turns[turns.count - 1] = last
+            if let last = groups.last, last.key == key, w.start - (last.words.last?.end ?? w.start) < 2.0 {
+                groups[groups.count - 1].words.append(w)
             } else {
-                turns.append(Turn(speakerKey: key, start: w.start, end: w.end, text: w.text))
+                groups.append(WordGroup(key: key, words: [w]))
             }
             lastSpeaker = speaker ?? lastSpeaker
         }
-        return turns
+        return TurnSmoothing.smooth(groups).map { g in
+            Turn(speakerKey: g.key, start: g.words.first!.start, end: g.words.last!.end,
+                 text: g.words.map(\.text).joined(separator: " "))
+        }
     }
 
     static func defaultTitle(for folder: URL) -> String {

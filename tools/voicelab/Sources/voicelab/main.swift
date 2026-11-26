@@ -12,21 +12,26 @@ import Foundation
 let usage = """
     craftpad++ voicelab — transcrição de reuniões com separação de falantes (protótipo)
 
+    Opção geral: --json  (eventos em JSON, usado pelo craftpad++)
+
     Comandos:
       gravar [pasta]           Grava microfone + som do computador até você apertar Enter,
                                depois analisa. Sem pasta, cria ~/craftpad-reunioes/AAAA-MM-DD_HHhMM.
           --sem-sistema        Só o microfone (reunião presencial; não pede permissão de tela)
           --sem-analise        Só grava
+          --sem-ao-vivo        Não mostra o rascunho da transcrição durante a gravação
 
       analisar <pasta|arquivo> Analisa uma gravação (pasta do 'gravar' ou um arquivo de áudio,
                                ex.: .m4a do Plaud, .wav, .mp3)
-          --motor X            nemotron, parakeet ou ambos (padrão: ambos, para comparar)
+          --motor X            parakeet, nemotron ou ambos (padrão: parakeet)
+          --vocabulario arq    Lista de termos (um por linha) para corrigir nomes e siglas
           --max-falantes N     Limite de pessoas, se você souber
           --limiar 0.62        Semelhança mínima para reconhecer uma voz do banco (0 a 1)
           --titulo "texto"     Título da transcrição
 
       nomear <pasta>           Mostra trechos de cada falante e pergunta o nome.
                                A voz fica guardada para as próximas reuniões.
+          --definir "presencial:S1=Ana"  Define nomes sem perguntar (pode repetir)
 
       vozes                    Lista as vozes guardadas
           --esquecer "Nome"    Apaga uma voz do banco
@@ -39,7 +44,7 @@ func value(after flag: String, in args: [String]) -> String? {
 }
 
 func positional(_ args: [String]) -> [String] {
-    let valued: Set<String> = ["--motor", "--max-falantes", "--limiar", "--titulo", "--esquecer"]
+    let valued: Set<String> = ["--motor", "--max-falantes", "--limiar", "--titulo", "--esquecer", "--vocabulario", "--definir"]
     var out: [String] = []
     var i = 0
     while i < args.count {
@@ -65,6 +70,11 @@ func analyzeOptions(_ args: [String]) throws -> AnalyzeOptions {
         o.threshold = v
     }
     o.title = value(after: "--titulo", in: args)
+    if let v = value(after: "--vocabulario", in: args) {
+        let vocab = try Vocabulary(file: expand(v))
+        o.vocabulary = vocab.isEmpty ? nil : vocab
+        say("📚 Vocabulário: \(vocab.terms.count) termos")
+    }
     return o
 }
 
@@ -89,10 +99,28 @@ func finish(_ folder: URL) {
 
 // MARK: - Nomear
 
-func nameSpeakers(folder: URL) throws {
+func nameSpeakers(folder: URL, preset: [String: String]) throws {
     var result = try Output.load(from: folder)
     let bank = VoiceBank()
     let engine = result.engines.first
+
+    // Modo sem perguntas (usado pelo craftpad++): chave=Nome; nome vazio = não guardar
+    if !preset.isEmpty {
+        for i in result.speakers.indices {
+            guard let name = preset[result.speakers[i].key] else { continue }
+            if name.isEmpty || name == "-" {
+                result.speakers[i].name = nil
+                continue
+            }
+            result.speakers[i].name = name
+            bank.learn(name: name, embedding: result.speakers[i].embedding, seconds: result.speakers[i].seconds)
+        }
+        try bank.save()
+        try Output.write(result, to: folder)
+        Events.emit("nomes", ["pasta": folder.path])
+        say("✅ Nomes aplicados; \(bank.entries.count) voz(es) no banco.")
+        return
+    }
 
     say("Para cada falante: digite o nome e Enter.")
     say("  Enter vazio = confirma o nome reconhecido (ou pula, se não houver)")
@@ -135,6 +163,7 @@ func nameSpeakers(folder: URL) throws {
 // MARK: - Execução
 
 let args = Array(CommandLine.arguments.dropFirst())
+Events.enabled = args.contains("--json")
 let command = args.first ?? "ajuda"
 let rest = Array(args.dropFirst())
 
@@ -143,7 +172,8 @@ do {
     case "gravar":
         let options = try analyzeOptions(rest)
         let folder = positional(rest).first.map(expand) ?? defaultRecordingFolder()
-        _ = try await Recorder.record(into: folder, captureSystem: !rest.contains("--sem-sistema"))
+        _ = try await Recorder.record(into: folder, captureSystem: !rest.contains("--sem-sistema"),
+                                      live: !rest.contains("--sem-ao-vivo"), vocabulary: options.vocabulary)
         if !rest.contains("--sem-analise") {
             _ = try await Analyzer.analyze(input: folder, options: options)
             finish(folder)
@@ -165,7 +195,20 @@ do {
             folder = folder.deletingLastPathComponent()
                 .appendingPathComponent(folder.deletingPathExtension().lastPathComponent + "-voicelab")
         }
-        try nameSpeakers(folder: folder)
+        var preset: [String: String] = [:]
+        var k = 0
+        while k < rest.count {
+            if rest[k] == "--definir", k + 1 < rest.count {
+                let pair = rest[k + 1]
+                if let eq = pair.firstIndex(of: "=") {
+                    preset[String(pair[..<eq])] = String(pair[pair.index(after: eq)...]).trimmingCharacters(in: .whitespaces)
+                }
+                k += 2
+            } else {
+                k += 1
+            }
+        }
+        try nameSpeakers(folder: folder, preset: preset)
 
     case "vozes":
         let bank = VoiceBank()
@@ -185,10 +228,14 @@ do {
             say("Arquivo: \(bank.url.path)")
         }
 
+    case "teste-interno":
+        try selfTest()
+
     default:
         print(usage)
     }
 } catch {
+    Events.emit("erro", ["texto": error.localizedDescription])
     say("❌ \(error.localizedDescription)")
     exit(1)
 }
