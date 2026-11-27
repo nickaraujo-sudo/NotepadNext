@@ -40,8 +40,8 @@ static void collectActions(QMenu *menu, QSet<QAction *> &out)
 }
 
 WorkspaceController::WorkspaceController(MainWindow *window, QMenuBar *menuBar, QMenu *viewMenu, QMenu *helpMenu,
-                                         QToolBar *firstToolBar, QAction *openVaultAction)
-    : QObject(window), window(window)
+                                         QToolBar *firstToolBar, QAction *openVaultAction, QDockWidget *sidebar)
+    : QObject(window), window(window), mainBar(firstToolBar), sidebar(sidebar)
 {
     // Menus do editor (os que existem antes das abas): ficam só em Anotações
     originalMenus = menuBar->actions();
@@ -58,17 +58,13 @@ WorkspaceController::WorkspaceController(MainWindow *window, QMenuBar *menuBar, 
     stack->addWidget(meetingPage);
     window->setCentralWidget(stack);
 
-    buildTabs(firstToolBar);
+    buildTabs();
     buildModeActions(viewMenu);
     buildGraphUi(menuBar, helpMenu, openVaultAction);
     buildMeetingUi(menuBar, helpMenu);
     refreshIcons();
     connect(ThemeManager::instance(), &ThemeManager::themeChanged, this, &WorkspaceController::refreshIcons);
 
-    // Pedidos que levam de volta às anotações (clique numa nota, tag ou link)
-    NotepadNextHub *hub = NotepadNextHub::instance();
-    connect(hub, &NotepadNextHub::tagRequested, this, &WorkspaceController::showNotes);
-    connect(hub, &NotepadNextHub::vaultRequested, this, &WorkspaceController::showNotes);
 
     // Editor ativo de verdade (o "atual" do painel pode atrasar quando a área estava escondida)
     connect(window, &MainWindow::editorActivated, this, [this](ScintillaNext *editor) { lastActivated = editor; });
@@ -76,6 +72,54 @@ WorkspaceController::WorkspaceController(MainWindow *window, QMenuBar *menuBar, 
     applyMenus();
     graphBar->hide();
     meetingBar->hide();
+    layoutToolBars();
+}
+
+void WorkspaceController::layoutToolBars()
+{
+    QToolBar *format = window->findChild<QToolBar *>(QStringLiteral("formatToolBar"));
+    QList<QToolBar *> others;
+    for (QToolBar *bar : window->findChildren<QToolBar *>()) {
+        if (bar->parentWidget() != window || window->toolBarArea(bar) != Qt::TopToolBarArea)
+            continue;
+        if (bar == tabsBar || bar == mainBar || bar == format || bar == graphBar || bar == meetingBar)
+            continue;
+        others << bar;
+    }
+
+    // removeToolBar esconde a barra: guarda quem estava visível
+    QList<QToolBar *> all = {tabsBar, mainBar};
+    all += others;
+    if (format) all << format;
+    all << graphBar << meetingBar;
+    QHash<QToolBar *, bool> visible;
+    for (QToolBar *bar : all) {
+        visible.insert(bar, !bar->isHidden());
+        window->removeToolBar(bar);
+    }
+
+    // Linha 1: abas | Linha 2: ícones principais (ou do Grafo/Reunião) | Linha 3: formatação
+    window->addToolBar(Qt::TopToolBarArea, tabsBar);
+    window->addToolBarBreak(Qt::TopToolBarArea);
+    window->addToolBar(Qt::TopToolBarArea, mainBar);
+    for (QToolBar *bar : others) window->addToolBar(Qt::TopToolBarArea, bar);
+    window->addToolBar(Qt::TopToolBarArea, graphBar);
+    window->addToolBar(Qt::TopToolBarArea, meetingBar);
+    if (format) {
+        window->addToolBarBreak(Qt::TopToolBarArea);
+        window->addToolBar(Qt::TopToolBarArea, format);
+    }
+    for (QToolBar *bar : all)
+        bar->setVisible(bar == tabsBar || visible.value(bar));
+}
+
+void WorkspaceController::pinSidebar()
+{
+    if (!sidebar) return;
+    if (sidebar->isFloating()) sidebar->setFloating(false);
+    if (window->dockWidgetArea(sidebar) != Qt::LeftDockWidgetArea)
+        window->addDockWidget(Qt::LeftDockWidgetArea, sidebar);
+    sidebar->show();
 }
 
 QToolBar *WorkspaceController::makeToolBar(const QString &title, const QString &objectName)
@@ -106,7 +150,7 @@ void WorkspaceController::refreshIcons()
         tabs->setTabIcon(i, tm->icon(tabIcons[i]));
 }
 
-void WorkspaceController::buildTabs(QToolBar *firstToolBar)
+void WorkspaceController::buildTabs()
 {
     tabsBar = new QToolBar(tr("Abas"), window);
     tabsBar->setObjectName(QStringLiteral("workspaceTabsToolBar"));
@@ -139,8 +183,7 @@ void WorkspaceController::buildTabs(QToolBar *firstToolBar)
     tabsBar->addWidget(tabs);
     connect(tabs, &QTabBar::currentChanged, this, [this](int index) { setMode(Mode(index)); });
 
-    window->insertToolBar(firstToolBar, tabsBar);
-    window->insertToolBarBreak(firstToolBar);
+    window->addToolBar(Qt::TopToolBarArea, tabsBar);
 }
 
 void WorkspaceController::buildModeActions(QMenu *viewMenu)
@@ -309,8 +352,8 @@ void WorkspaceController::suspendNotes()
     }
     hiddenDocks.clear();
     for (QDockWidget *dock : window->findChildren<QDockWidget *>()) {
-        if (dock->parentWidget() != window || dock->isHidden())
-            continue;
+        if (dock->parentWidget() != window || dock->isHidden() || dock == sidebar)
+            continue; // a barra lateral (arquivos e tags) fica em todas as abas
         hiddenDocks << dock;
         dock->hide();
     }
@@ -411,6 +454,9 @@ void WorkspaceController::prepareForSave()
 void WorkspaceController::restoreMode()
 {
     const int saved = QSettings().value(QLatin1String(kModeKey), 0).toInt();
+    // O layout salvo pode ser de uma versão anterior: reimpõe abas acima dos ícones e a barra lateral fixa
+    layoutToolBars();
+    pinSidebar();
     // Garante que as barras das outras abas comecem escondidas, seja qual for o layout salvo
     graphBar->setVisible(current == Graph);
     meetingBar->setVisible(current == Meeting);

@@ -36,7 +36,7 @@ public:
     enum Mode { Notes = 0, Graph = 1, Meeting = 2 };
 
     WorkspaceController(MainWindow *window, QMenuBar *menuBar, QMenu *viewMenu, QMenu *helpMenu,
-                        QToolBar *firstToolBar, QAction *openVaultAction);
+                        QToolBar *firstToolBar, QAction *openVaultAction, QDockWidget *sidebar);
 
     Mode mode() const { return current; }
     void setMode(Mode mode);
@@ -48,7 +48,10 @@ public:
     void restoreMode();
 
 private:
-    void buildTabs(QToolBar *firstToolBar);
+    void buildTabs();
+    // Ordem fixa das barras: abas numa linha só, ícones abaixo
+    void layoutToolBars();
+    void pinSidebar();
     void buildModeActions(QMenu *viewMenu);
     void buildGraphUi(QMenuBar *menuBar, QMenu *helpMenu, QAction *openVaultAction);
     void buildMeetingUi(QMenuBar *menuBar, QMenu *helpMenu);
@@ -65,6 +68,8 @@ private:
     QStackedWidget *stack;
     QTabBar *tabs;
     QToolBar *tabsBar;
+    QToolBar *mainBar;
+    QPointer<QDockWidget> sidebar;
     GraphPage *graphPage;
     MeetingAssistantPage *meetingPage;
 

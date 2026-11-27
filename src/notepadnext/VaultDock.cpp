@@ -85,6 +85,7 @@ VaultDock::VaultDock(QWidget *parent) :
     layout->addWidget(bar);
 
     auto *splitter = new QSplitter(Qt::Vertical, container);
+    splitter->setChildrenCollapsible(false); // arquivos e tags sempre visíveis
 
     // Parte de cima: pastas e arquivos
     auto *filesBox = new QWidget(splitter);

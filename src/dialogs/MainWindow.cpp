@@ -2451,8 +2451,9 @@ void MainWindow::setupNotepadNextFeatures()
     // Painel esquerdo: pastas em cima, tags embaixo
     VaultDock *vaultDock = new VaultDock(this);
     addDockWidget(Qt::LeftDockWidgetArea, vaultDock);
-    vaultDock->toggleViewAction()->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_E));
-    ui->menuView->addAction(vaultDock->toggleViewAction());
+    // Barra lateral fixa (arquivos e tags): não fecha, não flutua e aparece em todas as abas
+    vaultDock->setFeatures(QDockWidget::NoDockWidgetFeatures);
+    vaultDock->setTitleBarWidget(new QWidget(vaultDock));
 
     // Prévia de Markdown lado a lado
     MarkdownPreviewDock *markdownPreviewDock = new MarkdownPreviewDock(this);
@@ -2477,7 +2478,7 @@ void MainWindow::setupNotepadNextFeatures()
     ui->menuFile->insertAction(ui->menuFile->actions().value(2), openVault);
 
     // Abas do topo: Anotações | Grafo | Meeting Assistant (cada uma com seus menus e ícones)
-    workspace = new WorkspaceController(this, ui->menuBar, ui->menuView, ui->menuHelp, ui->mainToolBar, openVault);
+    workspace = new WorkspaceController(this, ui->menuBar, ui->menuView, ui->menuHelp, ui->mainToolBar, openVault, vaultDock);
 
     // Abrir arquivo (vindo do painel, do grafo ou dos backlinks)
     connect(hub, &NotepadNextHub::openFileRequested, this, [this](const QString &path, int line) {
