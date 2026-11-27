@@ -6,6 +6,7 @@
 #include "MarkdownRenderer.h"
 #include "FormulaEngine.h"
 
+#include <QCoreApplication>
 #include <QRegularExpression>
 #include <QTextBlock>
 #include <QTextCursor>
@@ -336,7 +337,7 @@ QString MarkdownRenderer::tableHtml(MdSegment &seg)
     QString html;
     if (t.meta.name.isEmpty()) {
         html += QStringLiteral("<p style=\"color:%1; font-size:small; margin:0\">%2</p>")
-                .arg(style.muted.name(), QStringLiteral("⚠ Tabela sem nome — dê um nome em Formatar ▸ Tabela ▸ Propriedades"));
+                .arg(style.muted.name(), QCoreApplication::translate("MarkdownRenderer", "⚠ Unnamed table — give it a name in Format ▸ Table ▸ Table name, lines and colors"));
     }
     else {
         html += QStringLiteral("<p style=\"color:%1; font-size:small; margin:0\">▦ %2</p>").arg(style.muted.name(), t.meta.name.toHtmlEscaped());

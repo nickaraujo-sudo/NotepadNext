@@ -24,6 +24,11 @@ public:
     // para os nomes atuais (NotepadNext). Roda uma vez, na abertura.
     static void migrateLegacyNames();
 
+    // File formats shown in the sidebar file tree ("md", "txt", "csv"). Markdown is always shown.
+    static QStringList availableSidebarFormats();
+    static QStringList sidebarFormats();
+    void setSidebarFormats(const QStringList &formats);
+
     // Cores do NotepadNext, usadas no editor, na prévia e no grafo
     static constexpr unsigned int LinkColor = 0x9B6BE0; // roxo do logo
     static constexpr unsigned int TagColor = 0xFF2E97;  // rosa neon
@@ -33,6 +38,7 @@ signals:
     void openFileRequested(const QString &path, int line);
     void tagRequested(const QString &tag);
     void vaultRequested();
+    void sidebarFormatsChanged(const QStringList &formats);
 
 private:
     explicit NotepadNextHub(QObject *parent = nullptr);

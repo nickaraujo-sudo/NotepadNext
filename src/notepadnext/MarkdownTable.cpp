@@ -200,6 +200,25 @@ void MarkdownTable::normalize()
         aligns.removeLast();
 }
 
+// Width of the text on screen in a monospaced editor: accents and other combining
+// marks take no space; CJK characters and emoji take two columns.
+int MarkdownTable::displayWidth(const QString &text)
+{
+    int width = 0;
+    const QList<uint> codepoints = text.toUcs4();
+    for (uint cp : codepoints) {
+        const QChar::Category cat = QChar::category(char32_t(cp));
+        if (cat == QChar::Mark_NonSpacing || cat == QChar::Mark_Enclosing || cat == QChar::Other_Format
+            || (cp >= 0xFE00 && cp <= 0xFE0F))
+            continue;
+        const bool wide = (cp >= 0x1100 && cp <= 0x115F) || (cp >= 0x2E80 && cp <= 0xA4CF) || (cp >= 0xAC00 && cp <= 0xD7A3)
+                          || (cp >= 0xF900 && cp <= 0xFAFF) || (cp >= 0xFE30 && cp <= 0xFE4F) || (cp >= 0xFF00 && cp <= 0xFF60)
+                          || (cp >= 0xFFE0 && cp <= 0xFFE6) || (cp >= 0x1F300 && cp <= 0x1FAFF) || (cp >= 0x20000 && cp <= 0x3FFFD);
+        width += wide ? 2 : 1;
+    }
+    return width;
+}
+
 QString MarkdownTable::toMarkdown() const
 {
     MarkdownTable t = *this;
@@ -209,12 +228,20 @@ QString MarkdownTable::toMarkdown() const
     QVector<int> widths(cols, 3);
     for (const QStringList &r : t.rows)
         for (int c = 0; c < cols; ++c)
-            widths[c] = qMax(widths[c], int(r.at(c).size()));
+            widths[c] = qMax(widths[c], displayWidth(r.at(c)));
 
+    // Pads each cell to the column width, following the column alignment
     auto rowText = [&](const QStringList &r) {
         QString s = QStringLiteral("|");
-        for (int c = 0; c < cols; ++c)
-            s += QLatin1Char(' ') + r.at(c).leftJustified(widths[c]) + QStringLiteral(" |");
+        for (int c = 0; c < cols; ++c) {
+            const QString cellText = r.at(c);
+            const int gap = widths[c] - displayWidth(cellText);
+            const QString a = t.aligns.value(c);
+            int left = 0;
+            if (a == QLatin1String("right")) left = gap;
+            else if (a == QLatin1String("center")) left = gap / 2;
+            s += QLatin1Char(' ') + QString(left, QLatin1Char(' ')) + cellText + QString(gap - left, QLatin1Char(' ')) + QStringLiteral(" |");
+        }
         return s;
     };
 

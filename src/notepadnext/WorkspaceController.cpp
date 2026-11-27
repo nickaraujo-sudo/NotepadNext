@@ -152,7 +152,7 @@ void WorkspaceController::refreshIcons()
 
 void WorkspaceController::buildTabs()
 {
-    tabsBar = new QToolBar(tr("Abas"), window);
+    tabsBar = new QToolBar(tr("Tabs"), window);
     tabsBar->setObjectName(QStringLiteral("workspaceTabsToolBar"));
     tabsBar->setMovable(false);
     tabsBar->setFloatable(false);
@@ -171,12 +171,12 @@ void WorkspaceController::buildTabs()
         " border-bottom: 3px solid transparent; background: transparent; }"
         "QTabBar#workspaceTabs::tab:selected { border-bottom: 3px solid #9B6BE0; font-weight: 600; }"
         "QTabBar#workspaceTabs::tab:hover:!selected { border-bottom: 3px solid rgba(155,107,224,0.35); }"));
-    tabs->addTab(tr("Anotações"));
-    tabs->addTab(tr("Grafo"));
+    tabs->addTab(tr("Notes"));
+    tabs->addTab(tr("Graph"));
     tabs->addTab(tr("Meeting Assistant"));
-    tabs->setTabToolTip(0, tr("Notas em Markdown, prévia, vault e backlinks (%1)").arg(QKeySequence(Qt::CTRL | Qt::Key_1).toString(QKeySequence::NativeText)));
-    tabs->setTabToolTip(1, tr("Grafo do vault (%1)").arg(QKeySequence(Qt::CTRL | Qt::Key_2).toString(QKeySequence::NativeText)));
-    tabs->setTabToolTip(2, tr("Gravação e transcrição de reuniões (%1)").arg(QKeySequence(Qt::CTRL | Qt::Key_3).toString(QKeySequence::NativeText)));
+    tabs->setTabToolTip(0, tr("Markdown notes, preview, vault and backlinks (%1)").arg(QKeySequence(Qt::CTRL | Qt::Key_1).toString(QKeySequence::NativeText)));
+    tabs->setTabToolTip(1, tr("Vault graph (%1)").arg(QKeySequence(Qt::CTRL | Qt::Key_2).toString(QKeySequence::NativeText)));
+    tabs->setTabToolTip(2, tr("Meeting recording and transcription (%1)").arg(QKeySequence(Qt::CTRL | Qt::Key_3).toString(QKeySequence::NativeText)));
     QFont f = tabs->font();
     f.setPointSizeF(f.pointSizeF() + 1);
     tabs->setFont(f);
@@ -189,7 +189,7 @@ void WorkspaceController::buildTabs()
 void WorkspaceController::buildModeActions(QMenu *viewMenu)
 {
     modeGroup = new QActionGroup(this);
-    const QStringList names = {tr("Anotações"), tr("Grafo"), tr("Meeting Assistant")};
+    const QStringList names = {tr("Notes"), tr("Graph"), tr("Meeting Assistant")};
     const QStringList icons = {QStringLiteral("notes"), QStringLiteral("graph"), QStringLiteral("meeting")};
     const int keys[] = {Qt::Key_1, Qt::Key_2, Qt::Key_3};
     for (int i = 0; i < 3; ++i) {
@@ -214,10 +214,10 @@ void WorkspaceController::buildModeActions(QMenu *viewMenu)
 QMenu *WorkspaceController::buildCompactViewMenu(QMenuBar *menuBar, QMenu *helpMenu)
 {
     // "Exibir" das abas Grafo e Meeting Assistant: só o que vale fora do editor
-    QMenu *menu = new QMenu(tr("&Exibir"), window);
+    QMenu *menu = new QMenu(tr("&View"), window);
     menu->addActions(modeActions);
     menu->addSeparator();
-    QMenu *themeMenu = menu->addMenu(tr("Tema"));
+    QMenu *themeMenu = menu->addMenu(tr("Theme"));
     connect(themeMenu, &QMenu::aboutToShow, this, [themeMenu]() {
         themeMenu->clear();
         QActionGroup *group = new QActionGroup(themeMenu);
@@ -256,11 +256,11 @@ void WorkspaceController::buildGraphUi(QMenuBar *menuBar, QMenu *helpMenu, QActi
     fit->setShortcutContext(Qt::WidgetWithChildrenShortcut);
     graphPage->addAction(fit);
 
-    QAction *vault = new QAction(tr("Abrir pasta do vault…"), this);
+    QAction *vault = new QAction(tr("Open vault folder…"), this);
     setIcon(vault, QStringLiteral("vault"));
     connect(vault, &QAction::triggered, openVaultAction, &QAction::trigger);
 
-    graphBar = makeToolBar(tr("Grafo"), QStringLiteral("graphToolBar"));
+    graphBar = makeToolBar(tr("Graph"), QStringLiteral("graphToolBar"));
     graphBar->addAction(vault);
     graphBar->addSeparator();
     graphBar->addActions({tags, orphans, spin});
@@ -271,7 +271,7 @@ void WorkspaceController::buildGraphUi(QMenuBar *menuBar, QMenu *helpMenu, QActi
     graphBar->addWidget(spacer);
     graphBar->addWidget(graphPage->statsLabel());
 
-    graphMenu = new QMenu(tr("&Grafo"), window);
+    graphMenu = new QMenu(tr("&Graph"), window);
     graphMenu->addAction(vault);
     graphMenu->addSeparator();
     graphMenu->addActions({tags, orphans, spin});
@@ -300,14 +300,14 @@ void WorkspaceController::buildMeetingUi(QMenuBar *menuBar, QMenu *helpMenu)
         m->addAction(a);
     }
 
-    meetingBar = makeToolBar(tr("Reunião"), QStringLiteral("meetingToolBar"));
+    meetingBar = makeToolBar(tr("Meeting"), QStringLiteral("meetingToolBar"));
     meetingBar->addActions({m->recordAction, m->stopAction});
     meetingBar->addSeparator();
     meetingBar->addActions({m->openMeetingAction, m->openAudioAction});
     meetingBar->addSeparator();
     meetingBar->addActions({m->reanalyzeAction, m->nameAction, m->saveAction});
 
-    meetingMenu = new QMenu(tr("&Reunião"), window);
+    meetingMenu = new QMenu(tr("&Meeting"), window);
     meetingMenu->addActions({m->recordAction, m->stopAction});
     meetingMenu->addSeparator();
     meetingMenu->addActions({m->openMeetingAction, m->openAudioAction});

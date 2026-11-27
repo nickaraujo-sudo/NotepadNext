@@ -130,7 +130,7 @@ void FormatController::tableCommand(const std::function<void(ScintillaNext *)> &
 
 void FormatController::buildMenusAndToolbar(QMenuBar *menuBar, QAction *menuBefore, QMenu *viewMenu)
 {
-    QMenu *menu = new QMenu(tr("For&matar"), window);
+    QMenu *menu = new QMenu(tr("For&mat"), window);
     menu->setObjectName(QStringLiteral("menuFormatting"));
     menuBar->insertMenu(menuBefore, menu);
 
@@ -144,38 +144,38 @@ void FormatController::buildMenusAndToolbar(QMenuBar *menuBar, QAction *menuBefo
         };
     };
 
-    QAction *bold = makeAction(QStringLiteral("Bold"), tr("&Negrito"), QStringLiteral("bold"), QKeySequence(Qt::CTRL | Qt::Key_B),
+    QAction *bold = makeAction(QStringLiteral("Bold"), tr("&Bold"), QStringLiteral("bold"), QKeySequence(Qt::CTRL | Qt::Key_B),
         charToggle(QStringLiteral("**"), QStringLiteral("**"),
                    [](const QTextCharFormat &f) { return f.fontWeight() >= QFont::DemiBold; },
                    [](QTextCharFormat &f, bool on) { f.setFontWeight(on ? QFont::Bold : QFont::Normal); }));
-    QAction *italic = makeAction(QStringLiteral("Italic"), tr("&Itálico"), QStringLiteral("italic"), QKeySequence(Qt::CTRL | Qt::Key_I),
+    QAction *italic = makeAction(QStringLiteral("Italic"), tr("&Italic"), QStringLiteral("italic"), QKeySequence(Qt::CTRL | Qt::Key_I),
         charToggle(QStringLiteral("*"), QStringLiteral("*"),
                    [](const QTextCharFormat &f) { return f.fontItalic(); },
                    [](QTextCharFormat &f, bool on) { f.setFontItalic(on); }));
-    QAction *underline = makeAction(QStringLiteral("Underline"), tr("&Sublinhado"), QStringLiteral("underline"), QKeySequence(Qt::CTRL | Qt::Key_U),
+    QAction *underline = makeAction(QStringLiteral("Underline"), tr("&Underline"), QStringLiteral("underline"), QKeySequence(Qt::CTRL | Qt::Key_U),
         charToggle(QStringLiteral("<u>"), QStringLiteral("</u>"),
                    [](const QTextCharFormat &f) { return f.fontUnderline() && !f.isAnchor(); },
                    [](QTextCharFormat &f, bool on) { f.setFontUnderline(on); }));
-    QAction *strike = makeAction(QStringLiteral("Strike"), tr("&Tachado"), QStringLiteral("strike"), QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_X),
+    QAction *strike = makeAction(QStringLiteral("Strike"), tr("&Strikethrough"), QStringLiteral("strike"), QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_X),
         charToggle(QStringLiteral("~~"), QStringLiteral("~~"),
                    [](const QTextCharFormat &f) { return f.fontStrikeOut(); },
                    [](QTextCharFormat &f, bool on) { f.setFontStrikeOut(on); }));
-    QAction *sup = makeAction(QStringLiteral("Superscript"), tr("Sobrescrito"), QStringLiteral("superscript"), QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_Period),
+    QAction *sup = makeAction(QStringLiteral("Superscript"), tr("Superscript"), QStringLiteral("superscript"), QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_Period),
         charToggle(QStringLiteral("<sup>"), QStringLiteral("</sup>"),
                    [](const QTextCharFormat &f) { return f.verticalAlignment() == QTextCharFormat::AlignSuperScript; },
                    [](QTextCharFormat &f, bool on) { f.setVerticalAlignment(on ? QTextCharFormat::AlignSuperScript : QTextCharFormat::AlignNormal); }));
-    QAction *sub = makeAction(QStringLiteral("Subscript"), tr("Subscrito"), QStringLiteral("subscript"), QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_Comma),
+    QAction *sub = makeAction(QStringLiteral("Subscript"), tr("Subscript"), QStringLiteral("subscript"), QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_Comma),
         charToggle(QStringLiteral("<sub>"), QStringLiteral("</sub>"),
                    [](const QTextCharFormat &f) { return f.verticalAlignment() == QTextCharFormat::AlignSubScript; },
                    [](QTextCharFormat &f, bool on) { f.setVerticalAlignment(on ? QTextCharFormat::AlignSubScript : QTextCharFormat::AlignNormal); }));
     menu->addActions({bold, italic, underline, strike, sup, sub});
 
     // --- Títulos ---
-    QMenu *headings = menu->addMenu(tr("Tít&ulo"));
+    QMenu *headings = menu->addMenu(tr("&Heading"));
     headings->setIcon(ThemeManager::instance()->icon(QStringLiteral("heading")));
     QList<QAction *> headingActions;
     for (int level = 0; level <= 3; ++level) {
-        const QString text = level == 0 ? tr("Texto normal") : tr("Título %1").arg(level);
+        const QString text = level == 0 ? tr("Normal text") : tr("Heading %1").arg(level);
         QAction *h = makeAction(QStringLiteral("Heading%1").arg(level), text, QString(), QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key(Qt::Key_0 + level)), [this, level]() {
             if (inPreview()) {
                 QTextCursor c = preview->browser()->textCursor();
@@ -202,9 +202,9 @@ void FormatController::buildMenusAndToolbar(QMenuBar *menuBar, QAction *menuBefo
             else setAlignment(editor(), align);
         });
     };
-    QAction *alignLeft = alignAction(QStringLiteral("AlignLeft"), tr("Alinhar à esquerda"), QStringLiteral("align-left"), QStringLiteral("left"), Qt::AlignLeft);
-    QAction *alignCenter = alignAction(QStringLiteral("AlignCenter"), tr("Centralizar"), QStringLiteral("align-center"), QStringLiteral("center"), Qt::AlignHCenter);
-    QAction *alignRight = alignAction(QStringLiteral("AlignRight"), tr("Alinhar à direita"), QStringLiteral("align-right"), QStringLiteral("right"), Qt::AlignRight);
+    QAction *alignLeft = alignAction(QStringLiteral("AlignLeft"), tr("Align left"), QStringLiteral("align-left"), QStringLiteral("left"), Qt::AlignLeft);
+    QAction *alignCenter = alignAction(QStringLiteral("AlignCenter"), tr("Center"), QStringLiteral("align-center"), QStringLiteral("center"), Qt::AlignHCenter);
+    QAction *alignRight = alignAction(QStringLiteral("AlignRight"), tr("Align right"), QStringLiteral("align-right"), QStringLiteral("right"), Qt::AlignRight);
     menu->addActions({alignLeft, alignCenter, alignRight});
     menu->addSeparator();
 
@@ -235,16 +235,16 @@ void FormatController::buildMenusAndToolbar(QMenuBar *menuBar, QAction *menuBefo
         bf.setMarker(task ? QTextBlockFormat::MarkerType::Unchecked : QTextBlockFormat::MarkerType::NoMarker);
         c.setBlockFormat(bf);
     };
-    QAction *bullet = makeAction(QStringLiteral("ListBullet"), tr("Lista com marcadores"), QStringLiteral("list-bullet"), QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_8), [this, previewList]() {
+    QAction *bullet = makeAction(QStringLiteral("ListBullet"), tr("Bulleted list"), QStringLiteral("list-bullet"), QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_8), [this, previewList]() {
         if (inPreview()) previewList(QTextListFormat::ListDisc, false); else toggleList(editor(), ListKind::Bullet);
     });
-    QAction *numbered = makeAction(QStringLiteral("ListNumber"), tr("Lista numerada"), QStringLiteral("list-number"), QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_7), [this, previewList]() {
+    QAction *numbered = makeAction(QStringLiteral("ListNumber"), tr("Numbered list"), QStringLiteral("list-number"), QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_7), [this, previewList]() {
         if (inPreview()) previewList(QTextListFormat::ListDecimal, false); else toggleList(editor(), ListKind::Numbered);
     });
-    QAction *task = makeAction(QStringLiteral("ListTask"), tr("Lista de tarefas (checkbox)"), QStringLiteral("list-task"), QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_9), [this, previewList]() {
+    QAction *task = makeAction(QStringLiteral("ListTask"), tr("Task list (checkbox)"), QStringLiteral("list-task"), QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_9), [this, previewList]() {
         if (inPreview()) previewList(QTextListFormat::ListDisc, true); else toggleList(editor(), ListKind::Task);
     });
-    QAction *done = makeAction(QStringLiteral("TaskDone"), tr("Marcar/desmarcar tarefa"), QStringLiteral("task-done"), QKeySequence(Qt::CTRL | Qt::Key_Return), [this]() {
+    QAction *done = makeAction(QStringLiteral("TaskDone"), tr("Check/uncheck task"), QStringLiteral("task-done"), QKeySequence(Qt::CTRL | Qt::Key_Return), [this]() {
         if (inPreview()) {
             QTextCursor c = preview->browser()->textCursor();
             QTextBlockFormat bf = c.blockFormat();
@@ -261,42 +261,46 @@ void FormatController::buildMenusAndToolbar(QMenuBar *menuBar, QAction *menuBefo
             c.createList(lf);
         }
     };
-    QAction *indent = makeAction(QStringLiteral("Indent"), tr("Aumentar recuo"), QStringLiteral("indent"), QKeySequence(), [this, previewIndent]() {
+    QAction *indent = makeAction(QStringLiteral("Indent"), tr("Increase indent"), QStringLiteral("indent"), QKeySequence(), [this, previewIndent]() {
         if (inPreview()) previewIndent(1); else indentLines(editor(), true);
     });
-    QAction *outdent = makeAction(QStringLiteral("Outdent"), tr("Diminuir recuo"), QStringLiteral("outdent"), QKeySequence(), [this, previewIndent]() {
+    QAction *outdent = makeAction(QStringLiteral("Outdent"), tr("Decrease indent"), QStringLiteral("outdent"), QKeySequence(), [this, previewIndent]() {
         if (inPreview()) previewIndent(-1); else indentLines(editor(), false);
     });
     menu->addActions({bullet, numbered, task, done, indent, outdent});
     menu->addSeparator();
 
     // --- Tabelas ---
-    QMenu *tableMenu = menu->addMenu(tr("Ta&bela"));
+    QMenu *tableMenu = menu->addMenu(tr("Ta&ble"));
     tableMenu->setIcon(ThemeManager::instance()->icon(QStringLiteral("table")));
     iconNames.insert(tableMenu->menuAction(), QStringLiteral("table"));
-    QAction *tInsert = makeAction(QStringLiteral("TableInsert"), tr("Inserir tabela…"), QStringLiteral("table-insert"), QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_T),
+    QAction *tInsert = makeAction(QStringLiteral("TableInsert"), tr("Insert table…"), QStringLiteral("table-insert"), QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_T),
                                   [this]() { tableCommand([this](ScintillaNext *e) { insertTable(e, window); }); });
-    QAction *rowAbove = makeAction(QStringLiteral("TableRowAbove"), tr("Inserir linha acima"), QStringLiteral("table-row-above"), QKeySequence(),
+    QAction *rowAbove = makeAction(QStringLiteral("TableRowAbove"), tr("Insert row above"), QStringLiteral("table-row-above"), QKeySequence(),
                                    [this]() { tableCommand([](ScintillaNext *e) { insertRow(e, false); }); });
-    QAction *rowBelow = makeAction(QStringLiteral("TableRowBelow"), tr("Inserir linha abaixo"), QStringLiteral("table-row-below"), QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_Return),
+    QAction *rowBelow = makeAction(QStringLiteral("TableRowBelow"), tr("Insert row below"), QStringLiteral("table-row-below"), QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_Return),
                                    [this]() { tableCommand([](ScintillaNext *e) { insertRow(e, true); }); });
-    QAction *rowDelete = makeAction(QStringLiteral("TableRowDelete"), tr("Excluir linha"), QStringLiteral("table-row-delete"), QKeySequence(),
+    QAction *rowDelete = makeAction(QStringLiteral("TableRowDelete"), tr("Delete row"), QStringLiteral("table-row-delete"), QKeySequence(),
                                     [this]() { tableCommand([](ScintillaNext *e) { deleteRow(e); }); });
-    QAction *colLeft = makeAction(QStringLiteral("TableColLeft"), tr("Inserir coluna à esquerda"), QStringLiteral("table-col-left"), QKeySequence(),
+    QAction *colLeft = makeAction(QStringLiteral("TableColLeft"), tr("Insert column left"), QStringLiteral("table-col-left"), QKeySequence(),
                                   [this]() { tableCommand([](ScintillaNext *e) { insertColumn(e, false); }); });
-    QAction *colRight = makeAction(QStringLiteral("TableColRight"), tr("Inserir coluna à direita"), QStringLiteral("table-col-right"), QKeySequence(),
+    QAction *colRight = makeAction(QStringLiteral("TableColRight"), tr("Insert column right"), QStringLiteral("table-col-right"), QKeySequence(),
                                    [this]() { tableCommand([](ScintillaNext *e) { insertColumn(e, true); }); });
-    QAction *colDelete = makeAction(QStringLiteral("TableColDelete"), tr("Excluir coluna"), QStringLiteral("table-col-delete"), QKeySequence(),
+    QAction *colDelete = makeAction(QStringLiteral("TableColDelete"), tr("Delete column"), QStringLiteral("table-col-delete"), QKeySequence(),
                                     [this]() { tableCommand([](ScintillaNext *e) { deleteColumn(e); }); });
-    QAction *tShade = makeAction(QStringLiteral("TableShade"), tr("Sombreamento da célula…"), QStringLiteral("table-shade"), QKeySequence(),
+    QAction *tShade = makeAction(QStringLiteral("TableShade"), tr("Cell shading…"), QStringLiteral("table-shade"), QKeySequence(),
                                  [this]() { tableCommand([this](ScintillaNext *e) { shadeCells(e, window); }); });
-    QAction *tProps = makeAction(QStringLiteral("TableProps"), tr("Nome, linhas e cores da tabela…"), QStringLiteral("table-border"), QKeySequence(),
+    QAction *tProps = makeAction(QStringLiteral("TableProps"), tr("Table name, lines and colors…"), QStringLiteral("table-border"), QKeySequence(),
                                  [this]() { tableCommand([this](ScintillaNext *e) { tableProperties(e, window); }); });
-    QAction *tDelete = makeAction(QStringLiteral("TableDelete"), tr("Excluir tabela"), QStringLiteral("table-delete"), QKeySequence(),
+    QAction *tAlign = makeAction(QStringLiteral("TableAlign"), tr("Align table columns"), QStringLiteral("table-align"), QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_L),
+                                 [this]() { tableCommand([](ScintillaNext *e) { alignTableColumns(e); }); });
+    tAlign->setToolTip(tr("Lines up the table columns in the editor so the text is easier to read (%1)").arg(tAlign->shortcut().toString(QKeySequence::NativeText)));
+    QAction *tDelete = makeAction(QStringLiteral("TableDelete"), tr("Delete table"), QStringLiteral("table-delete"), QKeySequence(),
                                   [this]() { tableCommand([](ScintillaNext *e) { deleteTable(e); }); });
-    QAction *formulas = makeAction(QStringLiteral("FormulaHelp"), tr("Fórmulas: como usar…"), QStringLiteral("formula"), QKeySequence(),
+    QAction *formulas = makeAction(QStringLiteral("FormulaHelp"), tr("Formulas: how to use…"), QStringLiteral("formula"), QKeySequence(),
                                    [this]() { showFormulaHelp(window); });
     tableMenu->addAction(tInsert);
+    tableMenu->addAction(tAlign);
     tableMenu->addSeparator();
     tableMenu->addActions({rowAbove, rowBelow, rowDelete});
     tableMenu->addSeparator();
@@ -309,7 +313,7 @@ void FormatController::buildMenusAndToolbar(QMenuBar *menuBar, QAction *menuBefo
     tableMenu->addAction(formulas);
 
     // --- Imagens ---
-    QAction *image = makeAction(QStringLiteral("ImageInsert"), tr("Inserir imagem…"), QStringLiteral("image"), QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_I), [this]() {
+    QAction *image = makeAction(QStringLiteral("ImageInsert"), tr("Insert image…"), QStringLiteral("image"), QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_I), [this]() {
         ScintillaNext *e = editor();
         if (inPreview()) {
             const int line = preview->sourceLineAtCursor();
@@ -321,7 +325,7 @@ void FormatController::buildMenusAndToolbar(QMenuBar *menuBar, QAction *menuBefo
         }
         ImageSupport::insertFromFile(e, window);
     });
-    QAction *imageProps = makeAction(QStringLiteral("ImageProps"), tr("Tamanho e posição da imagem…"), QStringLiteral("image-props"), QKeySequence(), [this]() {
+    QAction *imageProps = makeAction(QStringLiteral("ImageProps"), tr("Image size and position…"), QStringLiteral("image-props"), QKeySequence(), [this]() {
         ScintillaNext *e = editor();
         if (inPreview()) {
             const int line = preview->sourceLineAtCursor();
@@ -334,7 +338,7 @@ void FormatController::buildMenusAndToolbar(QMenuBar *menuBar, QAction *menuBefo
 
     // --- Barra de formatação (embaixo da barra principal) ---
     window->addToolBarBreak();
-    toolbar = new QToolBar(tr("Formatação"), window);
+    toolbar = new QToolBar(tr("Formatting"), window);
     toolbar->setObjectName(QStringLiteral("formatToolBar"));
     toolbar->setIconSize(QSize(18, 18));
     toolbar->setMovable(false);
@@ -345,7 +349,7 @@ void FormatController::buildMenusAndToolbar(QMenuBar *menuBar, QAction *menuBefo
     headingButton->setMenu(headings);
     headingButton->setPopupMode(QToolButton::InstantPopup);
     headingButton->setIcon(ThemeManager::instance()->icon(QStringLiteral("heading")));
-    headingButton->setToolTip(tr("Título"));
+    headingButton->setToolTip(tr("Heading"));
     headingButton->setProperty("appIcon", QStringLiteral("heading"));
     toolbar->addWidget(headingButton);
     toolbar->addSeparator();
@@ -359,19 +363,20 @@ void FormatController::buildMenusAndToolbar(QMenuBar *menuBar, QAction *menuBefo
     tableButton->setMenu(tableMenu);
     tableButton->setPopupMode(QToolButton::InstantPopup);
     tableButton->setIcon(ThemeManager::instance()->icon(QStringLiteral("table")));
-    tableButton->setToolTip(tr("Linhas, colunas e aparência da tabela"));
+    tableButton->setToolTip(tr("Table rows, columns and appearance"));
     tableButton->setProperty("appIcon", QStringLiteral("table"));
     toolbar->addWidget(tableButton);
+    toolbar->addAction(tAlign);
     toolbar->addActions({tShade, tProps});
     toolbar->addSeparator();
     toolbar->addActions({image, imageProps});
 
     QAction *toolbarToggle = toolbar->toggleViewAction();
-    toolbarToggle->setText(tr("Barra de formatação"));
+    toolbarToggle->setText(tr("Formatting toolbar"));
     viewMenu->addAction(toolbarToggle);
 
     // --- Tema e fonte da prévia (menu Visualizar) ---
-    QMenu *themeMenu = viewMenu->addMenu(tr("Tema"));
+    QMenu *themeMenu = viewMenu->addMenu(tr("Theme"));
     QActionGroup *group = new QActionGroup(themeMenu);
     for (const AppTheme &t : ThemeManager::instance()->themes()) {
         QAction *a = themeMenu->addAction(t.name);
@@ -381,7 +386,7 @@ void FormatController::buildMenusAndToolbar(QMenuBar *menuBar, QAction *menuBefo
         const QString id = t.id;
         connect(a, &QAction::triggered, this, [id]() { ThemeManager::instance()->setTheme(id); });
     }
-    QAction *fonts = viewMenu->addAction(tr("Fonte da prévia…"));
+    QAction *fonts = viewMenu->addAction(tr("Preview font…"));
     connect(fonts, &QAction::triggered, preview, &MarkdownPreviewDock::chooseFonts);
 }
 

@@ -2473,7 +2473,7 @@ void MainWindow::setupNotepadNextFeatures()
     backlinksDock->toggleViewAction()->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_B));
     ui->menuView->addAction(backlinksDock->toggleViewAction());
 
-    QAction *openVault = new QAction(tr("Abrir pasta do vault..."), this);
+    QAction *openVault = new QAction(tr("Open vault folder…"), this);
     connect(openVault, &QAction::triggered, vaultDock, &VaultDock::chooseVault);
     ui->menuFile->insertAction(ui->menuFile->actions().value(2), openVault);
 
@@ -2491,27 +2491,39 @@ void MainWindow::setupNotepadNextFeatures()
         }
     });
 
-    // Abrir [[link]]: cria a nota se ela ainda não existe (como o Obsidian)
+    // Open [[link]]; a note that does not exist yet is created in the same folder as the current note
     connect(hub, &NotepadNextHub::openNoteRequested, this, [this, index](const QString &target, const QString &fromPath) {
         QString path = index->resolveLink(target);
         if (path.isEmpty()) {
+            auto createAt = [](const QString &file) {
+                QDir().mkpath(QFileInfo(file).absolutePath());
+                QFile f(file);
+                if (!f.exists() && f.open(QIODevice::WriteOnly)) {
+                    f.write(QStringLiteral("# %1\n\n").arg(QFileInfo(file).completeBaseName()).toUtf8());
+                    f.close();
+                }
+            };
+            QString name = target;
+            name.replace(QRegularExpression(QStringLiteral(R"([:*?"<>|])")), QStringLiteral("-"));
+            if (!name.endsWith(QLatin1String(".md"), Qt::CaseInsensitive))
+                name += QStringLiteral(".md");
+
             if (target.startsWith(QLatin1Char('\x01'))) {
                 path = target.mid(1);
                 QFile f(path);
                 if (!f.exists() && f.open(QIODevice::WriteOnly))
                     f.close();
             }
+            else if (!fromPath.isEmpty() && !target.contains(QLatin1Char('/'))) {
+                path = QFileInfo(fromPath).dir().absoluteFilePath(name);
+                createAt(path);
+            }
             else if (index->hasRoot()) {
                 path = index->createNote(target);
             }
             else if (!fromPath.isEmpty()) {
-                // Sem vault: cria ao lado da nota atual
-                path = QFileInfo(fromPath).dir().absoluteFilePath(target + QStringLiteral(".md"));
-                QFile f(path);
-                if (!f.exists() && f.open(QIODevice::WriteOnly)) {
-                    f.write(QStringLiteral("# %1\n\n").arg(QFileInfo(path).completeBaseName()).toUtf8());
-                    f.close();
-                }
+                path = QFileInfo(fromPath).dir().absoluteFilePath(name);
+                createAt(path);
             }
         }
         if (!path.isEmpty())

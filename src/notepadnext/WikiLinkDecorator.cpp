@@ -245,9 +245,13 @@ void WikiLinkDecorator::notify(const Scintilla::NotificationData *pscn)
         editor->autoCStops("");
         break;
 
+    case Notification::DoubleClick:
     case Notification::IndicatorClick: {
-        // Cmd+clique no Mac (Ctrl no Windows/Linux)
-        if (!FlagSet(pscn->modifiers, Scintilla::KeyMod::Ctrl))
+        // Cmd+click (Ctrl on Windows/Linux) or double-click opens the link;
+        // a link to a note that does not exist yet creates it next to the current note
+        if (pscn->nmhdr.code == Notification::IndicatorClick && !FlagSet(pscn->modifiers, Scintilla::KeyMod::Ctrl))
+            break;
+        if (pscn->position < 0)
             break;
 
         const int indicators = editor->indicatorAllOnFor(pscn->position);

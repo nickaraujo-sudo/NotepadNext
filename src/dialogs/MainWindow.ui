@@ -806,7 +806,7 @@
      <normaloff>:/icons/newfile.png</normaloff>:/icons/newfile.png</iconset>
    </property>
    <property name="text">
-    <string>Sobre o NotepadNext</string>
+    <string>About NotepadNext</string>
    </property>
    <property name="menuRole">
     <enum>QAction::AboutRole</enum>

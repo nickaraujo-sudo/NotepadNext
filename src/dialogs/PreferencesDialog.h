@@ -43,6 +43,7 @@ public:
     void showApplicationRestartRequired() const;
 
 private:
+    void setupSidebarFormats();
     Ui::PreferencesDialog *ui;
     ApplicationSettings *settings;
 

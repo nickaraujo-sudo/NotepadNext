@@ -53,6 +53,7 @@ struct MarkdownTable {
 
     // Gera o Markdown da tabela (comentário + linhas), sem quebra de linha final
     QString toMarkdown() const;
+    static int displayWidth(const QString &text);
     void normalize(); // todas as linhas com o mesmo número de colunas
 
     static bool isTableLine(const QString &line);

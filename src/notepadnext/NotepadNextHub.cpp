@@ -63,3 +63,28 @@ void NotepadNextHub::migrateLegacyNames()
         QDir().rmdir(oldDir.path()); // só apaga se ficou vazia
     }
 }
+
+QStringList NotepadNextHub::availableSidebarFormats()
+{
+    return {QStringLiteral("md"), QStringLiteral("txt"), QStringLiteral("csv")};
+}
+
+QStringList NotepadNextHub::sidebarFormats()
+{
+    QStringList formats = QSettings().value(QStringLiteral("NotepadNext/sidebar/formats"), QStringList{QStringLiteral("md")}).toStringList();
+    if (!formats.contains(QStringLiteral("md")))
+        formats.prepend(QStringLiteral("md"));
+    return formats;
+}
+
+void NotepadNextHub::setSidebarFormats(const QStringList &formats)
+{
+    QStringList clean{QStringLiteral("md")};
+    for (const QString &f : formats)
+        if (availableSidebarFormats().contains(f) && !clean.contains(f))
+            clean << f;
+    if (clean == sidebarFormats())
+        return;
+    QSettings().setValue(QStringLiteral("NotepadNext/sidebar/formats"), clean);
+    emit sidebarFormatsChanged(clean);
+}

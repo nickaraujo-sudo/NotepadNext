@@ -20,6 +20,7 @@
 
 #include <QApplication>
 #include <QDirIterator>
+#include <QLibraryInfo>
 #include <QDebug>
 
 #include <memory>
@@ -68,7 +69,9 @@ QString TranslationManager::FormatLocaleTerritoryAndLanguage(QLocale &locale)
 void TranslationManager::loadSystemDefaultTranslation()
 {
     // The wrong translation file may be loaded when passing Locale::system() to loadTranslation function, e.g. "zh_CN" translation file will be loaded when the locale is "en_US". It's probably a Qt bug.
-    loadTranslation(QLocale(QLocale::system().name()));
+    // Use the user's preferred interface language (on macOS this can differ from the region formats).
+    const QString language = QLocale::system().uiLanguages().value(0, QLocale::system().name());
+    loadTranslation(QLocale(language));
 }
 
 void TranslationManager::loadTranslation(QLocale locale)
@@ -80,7 +83,11 @@ void TranslationManager::loadTranslation(QLocale locale)
     for (const auto& filename : filenames) {
         std::unique_ptr<QTranslator> translator = std::make_unique<QTranslator>();
 
-        if (translator->load(locale, filename, QStringLiteral("_"), path)) {
+        // Qt's own dialogs (buttons, file dialogs): bundled with the app or from the Qt installation
+        bool loaded = translator->load(locale, filename, QStringLiteral("_"), path);
+        if (!loaded && filename != QApplication::applicationName())
+            loaded = translator->load(locale, filename, QStringLiteral("_"), QLibraryInfo::path(QLibraryInfo::TranslationsPath));
+        if (loaded) {
             if (QCoreApplication::installTranslator(translator.get())) {
                 qInfo() << "Loaded translation" << translator.get()->filePath();
                 translators.append(translator.release());

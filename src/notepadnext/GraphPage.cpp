@@ -34,11 +34,11 @@ GraphPage::GraphPage(MainWindow *window) :
         connect(a, &QAction::toggled, this, [key](bool on) { QSettings().setValue(key, on); });
         return a;
     };
-    tagsAction = makeToggle(tr("Tags"), tr("Mostrar as tags como pontos no grafo"), QStringLiteral("NotepadNext/GraphTags"));
-    orphansAction = makeToggle(tr("Notas sem links"), tr("Mostrar notas que não têm links"), QStringLiteral("NotepadNext/GraphOrphans"));
-    spinActionPtr = makeToggle(tr("Girar"), tr("Girar o grafo devagar quando ninguém está mexendo"), QStringLiteral("NotepadNext/GraphSpin"));
-    fitActionPtr = new QAction(tr("Centralizar"), this);
-    fitActionPtr->setToolTip(tr("Enquadrar o grafo inteiro na tela"));
+    tagsAction = makeToggle(tr("Tags"), tr("Show tags as points in the graph"), QStringLiteral("NotepadNext/GraphTags"));
+    orphansAction = makeToggle(tr("Notes without links"), tr("Show notes that have no links"), QStringLiteral("NotepadNext/GraphOrphans"));
+    spinActionPtr = makeToggle(tr("Rotate"), tr("Slowly rotate the graph while it is idle"), QStringLiteral("NotepadNext/GraphSpin"));
+    fitActionPtr = new QAction(tr("Center"), this);
+    fitActionPtr->setToolTip(tr("Fit the whole graph on screen"));
 
     view->setShowTags(tagsAction->isChecked());
     view->setShowOrphans(orphansAction->isChecked());
@@ -51,7 +51,7 @@ GraphPage::GraphPage(MainWindow *window) :
     stats = new QLabel(this);
     stats->setContentsMargins(8, 0, 8, 0);
     auto updateStats = [this]() {
-        stats->setText(tr("%1 notas · %2 tags").arg(view->noteCount()).arg(view->tagCount()));
+        stats->setText(tr("%1 notes · %2 tags").arg(view->noteCount()).arg(view->tagCount()));
     };
     connect(view, &GraphView::statsChanged, this, updateStats);
     updateStats();

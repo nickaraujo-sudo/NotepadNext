@@ -419,8 +419,8 @@ void GraphView::paintEvent(QPaintEvent *)
     if (nodes.isEmpty()) {
         p.setPen(QColor(255, 255, 255, 170));
         p.drawText(rect(), Qt::AlignCenter, index->hasRoot()
-                   ? tr("Nenhuma nota .md neste vault ainda.")
-                   : tr("Escolha a pasta do vault no painel Vault para ver o grafo."));
+                   ? tr("No .md notes in this vault yet.")
+                   : tr("Choose the vault folder in the sidebar to see the graph."));
         return;
     }
 

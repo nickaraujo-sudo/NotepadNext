@@ -26,6 +26,11 @@
 #include <QButtonGroup>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QCheckBox>
+#include <QGroupBox>
+#include <QVBoxLayout>
+
+#include "NotepadNextHub.h"
 
 
 PreferencesDialog::PreferencesDialog(ApplicationSettings *settings, QWidget *parent) :
@@ -61,6 +66,8 @@ PreferencesDialog::PreferencesDialog(ApplicationSettings *settings, QWidget *par
     MapSettingToCheckBox(ui->checkBoxRestoreTempFiles, &ApplicationSettings::restoreTempFiles, &ApplicationSettings::setRestoreTempFiles, &ApplicationSettings::restoreTempFilesChanged);
 
     MapSettingToCheckBox(ui->checkBoxCombineSearchResults, &ApplicationSettings::combineSearchResults, &ApplicationSettings::setCombineSearchResults, &ApplicationSettings::combineSearchResultsChanged);
+
+    setupSidebarFormats();
 
     populateTranslationComboBox();
     connect(ui->comboBoxTranslation, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [=, this](int index) {
@@ -206,4 +213,39 @@ void PreferencesDialog::populateTranslationComboBox()
     if (index != -1) {
         ui->comboBoxTranslation->setCurrentIndex(index);
     }
+}
+
+void PreferencesDialog::setupSidebarFormats()
+{
+    // Sidebar (vault) file formats: Markdown is the default and is always shown
+    QGroupBox *box = new QGroupBox(tr("Sidebar: file formats shown"), this);
+    QVBoxLayout *layout = new QVBoxLayout(box);
+    const QStringList current = NotepadNextHub::sidebarFormats();
+    struct Format { QString id; QString label; };
+    const QList<Format> formats = {
+        {QStringLiteral("md"), tr("Markdown (.md) - default, always shown")},
+        {QStringLiteral("txt"), tr("Plain text (.txt)")},
+        {QStringLiteral("csv"), tr("CSV (.csv)")},
+    };
+    QList<QCheckBox *> boxes;
+    for (const Format &f : formats) {
+        QCheckBox *check = new QCheckBox(f.label, box);
+        check->setProperty("format", f.id);
+        check->setChecked(current.contains(f.id));
+        check->setEnabled(f.id != QLatin1String("md"));
+        layout->addWidget(check);
+        boxes << check;
+    }
+    for (QCheckBox *check : boxes) {
+        connect(check, &QCheckBox::toggled, this, [boxes]() {
+            QStringList selected;
+            for (QCheckBox *c : boxes)
+                if (c->isChecked()) selected << c->property("format").toString();
+            NotepadNextHub::instance()->setSidebarFormats(selected);
+        });
+    }
+
+    auto *contents = qobject_cast<QBoxLayout *>(ui->scrollAreaWidgetContents->layout());
+    if (contents)
+        contents->insertWidget(qMax(0, contents->count() - 1), box); // before the final spacer
 }

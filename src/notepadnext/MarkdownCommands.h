@@ -46,6 +46,8 @@ namespace MarkdownCommands
     void insertColumn(ScintillaNext *editor, bool right);
     void deleteColumn(ScintillaNext *editor);
     void deleteTable(ScintillaNext *editor);
+    // Lines up the columns of the table at the cursor (or of every table in the note)
+    void alignTableColumns(ScintillaNext *editor);
     void tableProperties(ScintillaNext *editor, QWidget *parent);
     void shadeCells(ScintillaNext *editor, QWidget *parent);
     void showFormulaHelp(QWidget *parent);

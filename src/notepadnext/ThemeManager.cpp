@@ -61,11 +61,11 @@ ThemeManager::ThemeManager(QObject *parent) : QObject(parent)
         return t;
     };
 
-    themeList << make("sistema", tr("Sistema (padrão do macOS)"), false, "", "", "", "", "", "", "", "", "");
-    themeList << make("claro", tr("Claro"), false, "#F5F4F7", "#FFFFFF", "#26262C", "#8A8894", "#9B6BE0", "#D9D6E0", "#E6DCF7", "#F3F1F6", "#F1ECFA");
-    themeList << make("papel", tr("Papel"), false, "#EFEAE0", "#FBF8F2", "#3A342C", "#8F8574", "#A0612F", "#DDD4C4", "#EADFCB", "#F2ECE1", "#F0E8DA");
-    themeList << make("grafite", tr("Grafite (escuro)"), true, "#2A2A2F", "#1F1F23", "#E4E4E9", "#9A99A3", "#B590F2", "#3E3D45", "#45385E", "#2A2930", "#302A3D");
-    themeList << make("noite", tr("Noite (escuro)"), true, "#1C2030", "#151925", "#DCE1EC", "#8A93A8", "#7AA2F7", "#2E3548", "#2C3B5E", "#1F2535", "#222C45");
+    themeList << make("sistema", tr("System (macOS default)"), false, "", "", "", "", "", "", "", "", "");
+    themeList << make("claro", tr("Light"), false, "#F5F4F7", "#FFFFFF", "#26262C", "#8A8894", "#9B6BE0", "#D9D6E0", "#E6DCF7", "#F3F1F6", "#F1ECFA");
+    themeList << make("papel", tr("Paper"), false, "#EFEAE0", "#FBF8F2", "#3A342C", "#8F8574", "#A0612F", "#DDD4C4", "#EADFCB", "#F2ECE1", "#F0E8DA");
+    themeList << make("grafite", tr("Graphite (dark)"), true, "#2A2A2F", "#1F1F23", "#E4E4E9", "#9A99A3", "#B590F2", "#3E3D45", "#45385E", "#2A2930", "#302A3D");
+    themeList << make("noite", tr("Night (dark)"), true, "#1C2030", "#151925", "#DCE1EC", "#8A93A8", "#7AA2F7", "#2E3548", "#2C3B5E", "#1F2535", "#222C45");
 
     QSettings settings;
     currentThemeId = settings.value(QStringLiteral("NotepadNext/theme"), QStringLiteral("sistema")).toString();
@@ -381,6 +381,13 @@ QIcon ThemeManager::icon(const QString &name) const
         else if (name == QLatin1String("table-delete")) drawBadge(p, accent, QPointF(50, 50), QStringLiteral("x"));
         else if (name == QLatin1String("table-shade")) p.fillRect(QRectF(23.5, 25, 17, 14), accent);
         else if (name == QLatin1String("table-border")) { p.setPen(QPen(accent, 6)); p.drawRoundedRect(QRectF(6, 10, 52, 44), 3, 3); }
+        else if (name == QLatin1String("table-align")) {
+            // Columns lined up: a double arrow across the grid
+            p.setPen(QPen(accent, 5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+            p.drawLine(QPointF(12, 32), QPointF(52, 32));
+            p.drawPolyline(QPolygonF({QPointF(20, 24), QPointF(12, 32), QPointF(20, 40)}));
+            p.drawPolyline(QPolygonF({QPointF(44, 24), QPointF(52, 32), QPointF(44, 40)}));
+        }
     }
     else if (name == QLatin1String("image")) {
         p.drawRoundedRect(QRectF(8, 12, 48, 40), 5, 5);

@@ -396,7 +396,7 @@ static bool requireTable(ScintillaNext *editor, TableContext *ctx)
 {
     *ctx = tableAtCaret(editor);
     if (!ctx->valid) {
-        QMessageBox::information(editor, QObject::tr("Tabela"), QObject::tr("Coloque o cursor dentro de uma tabela."));
+        QMessageBox::information(editor, QObject::tr("Table"), QObject::tr("Place the cursor inside a table."));
         return false;
     }
     ctx->table.normalize();
@@ -411,9 +411,9 @@ static QString askTableName(QWidget *parent, ScintillaNext *editor, const QStrin
     for (;;) {
         if (askUser) {
             QDialog d(parent);
-            d.setWindowTitle(QObject::tr("Nome da tabela"));
+            d.setWindowTitle(QObject::tr("Table name"));
             auto *layout = new QVBoxLayout(&d);
-            auto *label = new QLabel(QObject::tr("Toda tabela precisa de um nome, usado nas fórmulas (ex.: Vendas!B2):"), &d);
+            auto *label = new QLabel(QObject::tr("Every table needs a name, used in formulas (e.g. Sales!B2):"), &d);
             label->setWordWrap(true);
             auto *edit = new QLineEdit(name, &d);
             layout->addWidget(label);
@@ -430,7 +430,7 @@ static QString askTableName(QWidget *parent, ScintillaNext *editor, const QStrin
 
         static const QRegularExpression valid(QStringLiteral("^[\\p{L}_][\\p{L}\\p{N}_ ]*$"));
         if (!valid.match(name).hasMatch()) {
-            QMessageBox::warning(parent, QObject::tr("Nome inválido"), QObject::tr("Use letras, números, espaço ou _ e comece com uma letra."));
+            QMessageBox::warning(parent, QObject::tr("Invalid name"), QObject::tr("Use letters, numbers, spaces or _ and start with a letter."));
             continue;
         }
         // O nome não pode repetir na nota nem no vault
@@ -440,8 +440,8 @@ static QString askTableName(QWidget *parent, ScintillaNext *editor, const QStrin
                 duplicate = true;
         const QString other = VaultTables::instance().noteOf(name, editor->getFilePath());
         if (duplicate || !other.isEmpty()) {
-            QMessageBox::warning(parent, QObject::tr("Nome em uso"), QObject::tr("Já existe uma tabela chamada \"%1\"%2.")
-                                 .arg(name, other.isEmpty() ? QString() : QObject::tr(" em %1").arg(other)));
+            QMessageBox::warning(parent, QObject::tr("Name in use"), QObject::tr("There is already a table named \"%1\"%2.")
+                                 .arg(name, other.isEmpty() ? QString() : QObject::tr(" in %1").arg(other)));
             continue;
         }
         *ok = true;
@@ -452,19 +452,19 @@ static QString askTableName(QWidget *parent, ScintillaNext *editor, const QStrin
 void insertTable(ScintillaNext *editor, QWidget *parent)
 {
     QDialog d(parent);
-    d.setWindowTitle(QObject::tr("Inserir tabela"));
+    d.setWindowTitle(QObject::tr("Insert table"));
     auto *form = new QFormLayout(&d);
     auto *name = new QLineEdit(&d);
-    name->setPlaceholderText(QObject::tr("ex.: Vendas"));
+    name->setPlaceholderText(QObject::tr("e.g. Sales"));
     auto *cols = new QSpinBox(&d);
     cols->setRange(1, 30);
     cols->setValue(3);
     auto *rows = new QSpinBox(&d);
     rows->setRange(1, 200);
     rows->setValue(3);
-    form->addRow(QObject::tr("Nome (obrigatório):"), name);
-    form->addRow(QObject::tr("Colunas:"), cols);
-    form->addRow(QObject::tr("Linhas (além do cabeçalho):"), rows);
+    form->addRow(QObject::tr("Name (required):"), name);
+    form->addRow(QObject::tr("Columns:"), cols);
+    form->addRow(QObject::tr("Rows (besides the header):"), rows);
     auto *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &d);
     form->addRow(buttons);
     QObject::connect(buttons, &QDialogButtonBox::accepted, &d, &QDialog::accept);
@@ -482,7 +482,7 @@ void insertTable(ScintillaNext *editor, QWidget *parent)
     t.metaLine = 0;
     QStringList header;
     for (int c = 0; c < cols->value(); ++c)
-        header << QObject::tr("Coluna %1").arg(c + 1);
+        header << QObject::tr("Column %1").arg(c + 1);
     t.rows << header;
     for (int r = 0; r < rows->value(); ++r)
         t.rows << QStringList(QVector<QString>(cols->value()).toList());
@@ -522,7 +522,7 @@ void deleteRow(ScintillaNext *editor)
     TableContext ctx;
     if (!requireTable(editor, &ctx)) return;
     if (ctx.row == 0) {
-        QMessageBox::information(editor, QObject::tr("Tabela"), QObject::tr("O cabeçalho não pode ser excluído. Use \"Excluir tabela\"."));
+        QMessageBox::information(editor, QObject::tr("Table"), QObject::tr("The header row cannot be deleted. Use \"Delete table\"."));
         return;
     }
     MarkdownTable t = ctx.table;
@@ -537,7 +537,7 @@ void insertColumn(ScintillaNext *editor, bool right)
     MarkdownTable t = ctx.table;
     const int at = right ? ctx.col + 1 : ctx.col;
     for (int r = 0; r < t.rows.size(); ++r)
-        t.rows[r].insert(at, r == 0 ? QObject::tr("Coluna %1").arg(t.columnCount() + 1) : QString());
+        t.rows[r].insert(at, r == 0 ? QObject::tr("Column %1").arg(t.columnCount() + 1) : QString());
     t.aligns.insert(at, QString());
     writeTable(editor, ctx.table, t, ctx.row, at);
 }
@@ -557,12 +557,42 @@ void deleteColumn(ScintillaNext *editor)
     writeTable(editor, ctx.table, t, ctx.row, qMax(0, ctx.col - 1));
 }
 
+void alignTableColumns(ScintillaNext *editor)
+{
+    TableContext ctx = tableAtCaret(editor);
+    if (ctx.valid) {
+        ctx.table.normalize();
+        const QString text = ctx.table.toMarkdown();
+        QStringList current;
+        for (int l = ctx.table.startLine(); l <= ctx.table.lastLine; ++l) current << lineText(editor, l);
+        if (current.join(QLatin1Char('\n')) != text)
+            writeTable(editor, ctx.table, ctx.table, ctx.row, ctx.col);
+        return;
+    }
+
+    // Cursor outside a table: line up every table in the note (bottom to top keeps line numbers valid)
+    QList<MarkdownTable> tables = findMarkdownTables(allLines(editor));
+    if (tables.isEmpty()) {
+        QMessageBox::information(editor, QObject::tr("Table"), QObject::tr("This note has no tables."));
+        return;
+    }
+    const int caret = editor->currentPos();
+    editor->beginUndoAction();
+    for (int i = tables.size() - 1; i >= 0; --i) {
+        MarkdownTable t = tables.at(i);
+        t.normalize();
+        replaceLines(editor, t.startLine(), t.lastLine, t.toMarkdown());
+    }
+    editor->endUndoAction();
+    editor->gotoPos(qMin(caret, int(editor->length())));
+}
+
 void deleteTable(ScintillaNext *editor)
 {
     TableContext ctx;
     if (!requireTable(editor, &ctx)) return;
-    if (QMessageBox::question(editor, QObject::tr("Excluir tabela"),
-                              QObject::tr("Excluir a tabela \"%1\" inteira?").arg(ctx.table.meta.name.isEmpty() ? QObject::tr("sem nome") : ctx.table.meta.name))
+    if (QMessageBox::question(editor, QObject::tr("Delete table"),
+                              QObject::tr("Delete the whole table \"%1\"?").arg(ctx.table.meta.name.isEmpty() ? QObject::tr("unnamed") : ctx.table.meta.name))
             != QMessageBox::Yes)
         return;
     int last = ctx.table.lastLine;
@@ -605,17 +635,17 @@ void tableProperties(ScintillaNext *editor, QWidget *parent)
     MarkdownTable t = ctx.table;
 
     QDialog d(parent);
-    d.setWindowTitle(QObject::tr("Propriedades da tabela"));
+    d.setWindowTitle(QObject::tr("Table properties"));
     auto *form = new QFormLayout(&d);
     auto *name = new QLineEdit(t.meta.name, &d);
     QColor border = t.meta.borderColor;
-    auto *borderBtn = colorButton(&d, &border, QObject::tr("Automática"));
-    auto *resetBorder = new QPushButton(QObject::tr("Automática"), &d);
+    auto *borderBtn = colorButton(&d, &border, QObject::tr("Automatic"));
+    auto *resetBorder = new QPushButton(QObject::tr("Automatic"), &d);
     auto *style = new QComboBox(&d);
     const QList<QPair<QString, QString>> styles = {
-        {QStringLiteral("solid"), QObject::tr("Contínua")}, {QStringLiteral("dashed"), QObject::tr("Tracejada")},
-        {QStringLiteral("dotted"), QObject::tr("Pontilhada")}, {QStringLiteral("double"), QObject::tr("Dupla")},
-        {QStringLiteral("none"), QObject::tr("Sem linhas")}};
+        {QStringLiteral("solid"), QObject::tr("Solid")}, {QStringLiteral("dashed"), QObject::tr("Dashed")},
+        {QStringLiteral("dotted"), QObject::tr("Dotted")}, {QStringLiteral("double"), QObject::tr("Double")},
+        {QStringLiteral("none"), QObject::tr("No lines")}};
     for (const auto &s : styles) style->addItem(s.second, s.first);
     style->setCurrentIndex(qMax(0, style->findData(t.meta.borderStyle)));
     auto *width = new QSpinBox(&d);
@@ -626,16 +656,16 @@ void tableProperties(ScintillaNext *editor, QWidget *parent)
     bl->setContentsMargins(0, 0, 0, 0);
     bl->addWidget(borderBtn);
     bl->addWidget(resetBorder);
-    QObject::connect(resetBorder, &QPushButton::clicked, &d, [&]() { border = QColor(); borderBtn->setText(QObject::tr("Automática")); borderBtn->setStyleSheet(QString()); });
+    QObject::connect(resetBorder, &QPushButton::clicked, &d, [&]() { border = QColor(); borderBtn->setText(QObject::tr("Automatic")); borderBtn->setStyleSheet(QString()); });
 
-    auto *clearShade = new QPushButton(QObject::tr("Remover todo o sombreamento"), &d);
+    auto *clearShade = new QPushButton(QObject::tr("Remove all shading"), &d);
     bool clearAllShade = false;
     QObject::connect(clearShade, &QPushButton::clicked, &d, [&]() { clearAllShade = true; clearShade->setEnabled(false); });
 
-    form->addRow(QObject::tr("Nome:"), name);
-    form->addRow(QObject::tr("Cor das linhas:"), borderRow);
-    form->addRow(QObject::tr("Estilo das linhas:"), style);
-    form->addRow(QObject::tr("Espessura:"), width);
+    form->addRow(QObject::tr("Name:"), name);
+    form->addRow(QObject::tr("Line color:"), borderRow);
+    form->addRow(QObject::tr("Line style:"), style);
+    form->addRow(QObject::tr("Width:"), width);
     form->addRow(QString(), clearShade);
     auto *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &d);
     form->addRow(buttons);
@@ -667,8 +697,8 @@ void shadeCells(ScintillaNext *editor, QWidget *parent)
     const int c1 = qMin(ctx.col, ctx.col2), c2 = qMax(ctx.col, ctx.col2);
 
     QColorDialog dialog(t.meta.shadeFor(r1, c1).isValid() ? t.meta.shadeFor(r1, c1) : QColor(QStringLiteral("#FFF3C4")), parent);
-    dialog.setWindowTitle(QObject::tr("Sombreamento de %1").arg(r1 == r2 && c1 == c2 ? cellRefName(r1, c1) : cellRefName(r1, c1) + QLatin1Char(':') + cellRefName(r2, c2)));
-    auto *none = new QPushButton(QObject::tr("Sem sombreamento"), &dialog);
+    dialog.setWindowTitle(QObject::tr("Shading of %1").arg(r1 == r2 && c1 == c2 ? cellRefName(r1, c1) : cellRefName(r1, c1) + QLatin1Char(':') + cellRefName(r2, c2)));
+    auto *none = new QPushButton(QObject::tr("No shading"), &dialog);
     bool remove = false;
     QObject::connect(none, &QPushButton::clicked, &dialog, [&]() { remove = true; dialog.accept(); });
     if (auto *box = dialog.findChild<QDialogButtonBox *>())
@@ -688,20 +718,10 @@ void shadeCells(ScintillaNext *editor, QWidget *parent)
 void showFormulaHelp(QWidget *parent)
 {
     QString text = QObject::tr(
-        "<h3>Fórmulas nas tabelas</h3>"
-        "<p>Comece a célula com <b>=</b>. As colunas são letras e as linhas números; o cabeçalho é a linha 1 "
-        "(a primeira linha de dados é a 2).</p>"
-        "<ul>"
-        "<li><code>=B2*C2</code> — conta com outras células</li>"
-        "<li><code>=SOMA(B2:B9)</code> ou <code>=SOMA(B:B)</code> — intervalo ou coluna inteira</li>"
-        "<li><code>=Vendas!B2</code> — célula da tabela <i>Vendas</i>, mesmo em outra nota do vault</li>"
-        "<li><code>='Custos 2026'!C4</code> — nome com espaço vai entre aspas simples</li>"
-        "<li><code>=SE(B2&gt;100;\"alto\";\"baixo\")</code> — use <b>;</b> entre argumentos (com <b>;</b> a vírgula é decimal)</li>"
-        "</ul><p><b>Funções:</b> %1</p>"
-        "<p>Os nomes em inglês também funcionam (SUM, AVERAGE, IF, VLOOKUP...).</p>")
+        "<h3>Formulas in tables</h3><p>Start the cell with <b>=</b>. Columns are letters and rows are numbers; the header is row 1 (the first data row is 2).</p><ul><li><code>=B2*C2</code> — math with other cells</li><li><code>=SUM(B2:B9)</code> or <code>=SUM(B:B)</code> — a range or the whole column</li><li><code>=SUM(B2#)</code> — from B2 to the end of the column; new rows are included automatically and the result cell is left out</li><li><code>=Sales!B2</code> — a cell of the <i>Sales</i> table, even in another note of the vault</li><li><code>='Costs 2026'!C4</code> — a name with spaces goes in single quotes</li><li><code>=IF(B2&gt;100;\"high\";\"low\")</code> — use <b>;</b> between arguments (with <b>;</b> the comma is the decimal separator)</li></ul><p><b>Functions:</b> %1</p><p>Portuguese names also work (SOMA, MÉDIA, SE, PROCV...).</p>")
         .arg(FormulaEngine::functionNames().join(QStringLiteral(", ")));
     QMessageBox box(parent);
-    box.setWindowTitle(QObject::tr("Ajuda de fórmulas"));
+    box.setWindowTitle(QObject::tr("Formula help"));
     box.setTextFormat(Qt::RichText);
     box.setText(text);
     box.exec();

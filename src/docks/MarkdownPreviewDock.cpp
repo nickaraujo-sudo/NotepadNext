@@ -78,7 +78,7 @@ QMimeData *PreviewBrowser::createMimeDataFromSelection() const
 // ---------------------------------------------------------------------------
 
 MarkdownPreviewDock::MarkdownPreviewDock(MainWindow *parent) :
-    QDockWidget(tr("Prévia Markdown"), parent),
+    QDockWidget(tr("Markdown Preview"), parent),
     window(parent)
 {
     // Necessário para o app lembrar se o painel estava aberto
@@ -93,12 +93,12 @@ MarkdownPreviewDock::MarkdownPreviewDock(MainWindow *parent) :
     QToolBar *bar = new QToolBar(container);
     bar->setIconSize(QSize(16, 16));
     bar->setToolButtonStyle(Qt::ToolButtonTextOnly);
-    editAction = bar->addAction(tr("✎ Editar aqui"));
+    editAction = bar->addAction(tr("✎ Edit here"));
     editAction->setCheckable(true);
     editAction->setChecked(true);
-    editAction->setToolTip(tr("Editar o texto direto na prévia; as mudanças vão para o arquivo Markdown. Cmd+clique abre links."));
-    QAction *fontAction = bar->addAction(tr("Aa Fonte"));
-    fontAction->setToolTip(tr("Fonte e tamanho da prévia (só a visualização)"));
+    editAction->setToolTip(tr("Edit the text directly in the preview; changes go to the Markdown file. Cmd+click opens links."));
+    QAction *fontAction = bar->addAction(tr("Aa Font"));
+    fontAction->setToolTip(tr("Preview font and size (display only)"));
     connect(fontAction, &QAction::triggered, this, &MarkdownPreviewDock::chooseFonts);
     layout->addWidget(bar);
 
@@ -517,7 +517,7 @@ void MarkdownPreviewDock::chooseFonts()
 {
     const PreviewStyle s = ThemeManager::instance()->previewStyle();
     QDialog d(this);
-    d.setWindowTitle(tr("Fonte da prévia"));
+    d.setWindowTitle(tr("Preview font"));
     auto *form = new QFormLayout(&d);
 
     auto row = [&](const QString &label, const QString &family, int size, QFontComboBox **combo, QSpinBox **spin, bool mono) {
@@ -538,11 +538,11 @@ void MarkdownPreviewDock::chooseFonts()
 
     QFontComboBox *bodyCombo, *headCombo, *codeCombo;
     QSpinBox *bodySpin, *headSpin, *codeSpin;
-    row(tr("Texto:"), s.bodyFont.isEmpty() ? font().family() : s.bodyFont, s.bodySize, &bodyCombo, &bodySpin, false);
-    row(tr("Títulos (H1):"), s.headingFont.isEmpty() ? font().family() : s.headingFont, s.headingSize, &headCombo, &headSpin, false);
-    row(tr("Código:"), s.codeFont, s.codeSize, &codeCombo, &codeSpin, true);
+    row(tr("Text:"), s.bodyFont.isEmpty() ? font().family() : s.bodyFont, s.bodySize, &bodyCombo, &bodySpin, false);
+    row(tr("Headings (H1):"), s.headingFont.isEmpty() ? font().family() : s.headingFont, s.headingSize, &headCombo, &headSpin, false);
+    row(tr("Code:"), s.codeFont, s.codeSize, &codeCombo, &codeSpin, true);
 
-    auto *note = new QLabel(tr("Só muda a visualização; o arquivo Markdown continua igual."), &d);
+    auto *note = new QLabel(tr("Only changes the display; the Markdown file stays the same."), &d);
     note->setStyleSheet(QStringLiteral("color: gray"));
     form->addRow(note);
     auto *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::RestoreDefaults, &d);

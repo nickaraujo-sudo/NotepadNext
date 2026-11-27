@@ -51,7 +51,12 @@ public:
     static bool parseNumber(const QString &text, double *out);
     static QStringList functionNames();
 
+    // Cell whose formula is being evaluated (used by B2# and B:B to stop above the result cell)
+    struct CurrentCell { const MarkdownTable *table = nullptr; int row = -1; int col = -1; };
+    CurrentCell currentCell() const { return cellStack.isEmpty() ? CurrentCell() : cellStack.last(); }
+
 private:
+    QList<CurrentCell> cellStack;
     TableLookup lookup;
     QHash<QString, FormulaValue> cache;
     QSet<QString> evaluating;

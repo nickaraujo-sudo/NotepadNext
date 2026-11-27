@@ -125,7 +125,7 @@ bool insertFromMime(ScintillaNext *editor, const QMimeData *mime, int position)
 {
     const QString noteDir = noteDirFor(editor);
     if (noteDir.isEmpty()) {
-        QMessageBox::information(editor, QObject::tr("Inserir imagem"), QObject::tr("Salve a nota primeiro: a imagem é guardada na pasta \"anexos\" ao lado dela."));
+        QMessageBox::information(editor, QObject::tr("Insert image"), QObject::tr("Save the note first: the image is stored in the \"anexos\" folder next to it."));
         return true;
     }
     const QString attachDir = QDir(noteDir).filePath(QStringLiteral("anexos"));
@@ -189,8 +189,8 @@ bool insertFromMime(ScintillaNext *editor, const QMimeData *mime, int position)
 
 void insertFromFile(ScintillaNext *editor, QWidget *parent)
 {
-    const QStringList files = QFileDialog::getOpenFileNames(parent, QObject::tr("Inserir imagem"), QString(),
-                                                            QObject::tr("Imagens (*.png *.jpg *.jpeg *.gif *.svg *.webp *.bmp)"));
+    const QStringList files = QFileDialog::getOpenFileNames(parent, QObject::tr("Insert image"), QString(),
+                                                            QObject::tr("Images (*.png *.jpg *.jpeg *.gif *.svg *.webp *.bmp)"));
     if (files.isEmpty())
         return;
     QMimeData mime;
@@ -309,7 +309,7 @@ static void editMarkup(ScintillaNext *editor, QWidget *parent, int line, const I
     const QSize natural = reader.size();
 
     QDialog d(parent);
-    d.setWindowTitle(QObject::tr("Propriedades da imagem"));
+    d.setWindowTitle(QObject::tr("Image properties"));
     auto *form = new QFormLayout(&d);
     auto *info = new QLabel(natural.isValid() ? QObject::tr("%1 — %2 × %3 px").arg(QFileInfo(image.src).fileName()).arg(natural.width()).arg(natural.height())
                                               : QFileInfo(image.src).fileName(), &d);
@@ -320,14 +320,14 @@ static void editMarkup(ScintillaNext *editor, QWidget *parent, int line, const I
     width->setSingleStep(20);
     width->setValue(image.width);
     auto *pos = new QComboBox(&d);
-    pos->addItem(QObject::tr("Na linha do texto"), Inline);
-    pos->addItem(QObject::tr("Centralizada, em linha própria"), Centered);
-    pos->addItem(QObject::tr("Texto ao redor — imagem à esquerda"), WrapLeft);
-    pos->addItem(QObject::tr("Texto ao redor — imagem à direita"), WrapRight);
+    pos->addItem(QObject::tr("In line with text"), Inline);
+    pos->addItem(QObject::tr("Centered, on its own line"), Centered);
+    pos->addItem(QObject::tr("Text wrapped — image on the left"), WrapLeft);
+    pos->addItem(QObject::tr("Text wrapped — image on the right"), WrapRight);
     pos->setCurrentIndex(pos->findData(image.position));
     form->addRow(info);
-    form->addRow(QObject::tr("Largura na nota:"), width);
-    form->addRow(QObject::tr("Posição:"), pos);
+    form->addRow(QObject::tr("Width in the note:"), width);
+    form->addRow(QObject::tr("Position:"), pos);
     auto *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &d);
     form->addRow(buttons);
     QObject::connect(buttons, &QDialogButtonBox::accepted, &d, &QDialog::accept);
@@ -368,7 +368,7 @@ void editProperties(ScintillaNext *editor, QWidget *parent)
     const int col = QString::fromUtf8(editor->textRange(editor->positionFromLine(line), editor->currentPos())).size();
     const QList<ImageMarkup> images = findImages(text);
     if (images.isEmpty()) {
-        QMessageBox::information(parent, QObject::tr("Imagem"), QObject::tr("Coloque o cursor na linha de uma imagem."));
+        QMessageBox::information(parent, QObject::tr("Image"), QObject::tr("Place the cursor on a line with an image."));
         return;
     }
     ImageMarkup chosen = images.first();

@@ -15,6 +15,8 @@
 #include <QLabel>
 #include <QSettings>
 #include <QSortFilterProxyModel>
+#include <QSet>
+#include <QFileInfo>
 #include <QSplitter>
 #include <QToolButton>
 #include <QTreeView>
@@ -22,17 +24,37 @@
 #include <QVBoxLayout>
 
 // Esconde pastas e arquivos ocultos (.obsidian, .git, .DS_Store)
+// Hides dot files and shows only the file formats chosen in Preferences (folders always show)
 class HiddenFilterProxy : public QSortFilterProxyModel
 {
 public:
     using QSortFilterProxyModel::QSortFilterProxyModel;
 
+    void setFormats(const QStringList &list)
+    {
+        formats.clear();
+        for (const QString &f : list) {
+            formats.insert(f);
+            if (f == QLatin1String("md")) formats.insert(QStringLiteral("markdown"));
+        }
+        invalidateFilter();
+    }
+
 protected:
     bool filterAcceptsRow(int row, const QModelIndex &parent) const override
     {
         const QModelIndex idx = sourceModel()->index(row, 0, parent);
-        return !idx.data().toString().startsWith(QLatin1Char('.'));
+        const QString name = idx.data().toString();
+        if (name.startsWith(QLatin1Char('.')))
+            return false;
+        auto *fs = qobject_cast<QFileSystemModel *>(sourceModel());
+        if (!fs || fs->isDir(idx))
+            return true;
+        return formats.contains(QFileInfo(name).suffix().toLower());
     }
+
+private:
+    QSet<QString> formats;
 };
 
 static QToolButton *makeButton(const QString &text, const QString &tip, QWidget *parent)
@@ -76,8 +98,8 @@ VaultDock::VaultDock(QWidget *parent) :
     vaultLabel->setFont(bold);
     barLayout->addWidget(vaultLabel, 1);
 
-    auto *newBtn = makeButton(QStringLiteral("＋"), tr("Nova nota"), bar);
-    auto *openBtn = makeButton(QStringLiteral("📂"), tr("Escolher pasta do vault"), bar);
+    auto *newBtn = makeButton(QStringLiteral("＋"), tr("New note"), bar);
+    auto *openBtn = makeButton(QStringLiteral("📂"), tr("Choose vault folder"), bar);
     barLayout->addWidget(newBtn);
     barLayout->addWidget(openBtn);
     connect(newBtn, &QToolButton::clicked, this, &VaultDock::newNote);
@@ -92,12 +114,15 @@ VaultDock::VaultDock(QWidget *parent) :
     auto *filesLayout = new QVBoxLayout(filesBox);
     filesLayout->setContentsMargins(0, 0, 0, 0);
     filesLayout->setSpacing(0);
-    filesLayout->addWidget(makeHeader(tr("ARQUIVOS"), filesBox));
+    filesLayout->addWidget(makeHeader(tr("FILES"), filesBox));
 
     fsModel = new QFileSystemModel(this);
     fsModel->setFilter(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot);
     fsModel->setReadOnly(false); // permite renomear com duplo clique lento / F2
-    proxy = new HiddenFilterProxy(this);
+    auto *filter = new HiddenFilterProxy(this);
+    proxy = filter;
+    filter->setFormats(NotepadNextHub::sidebarFormats());
+    connect(NotepadNextHub::instance(), &NotepadNextHub::sidebarFormatsChanged, filter, &HiddenFilterProxy::setFormats);
     proxy->setSourceModel(fsModel);
 
     fileTree = new QTreeView(filesBox);
@@ -156,7 +181,7 @@ VaultDock::VaultDock(QWidget *parent) :
 void VaultDock::vaultChanged()
 {
     if (!index->hasRoot()) {
-        vaultLabel->setText(tr("Nenhum vault aberto"));
+        vaultLabel->setText(tr("No vault open"));
         fileTree->setModel(nullptr);
         refreshTags();
         return;
@@ -174,7 +199,7 @@ void VaultDock::vaultChanged()
 
 void VaultDock::chooseVault()
 {
-    const QString dir = QFileDialog::getExistingDirectory(this, tr("Escolha a pasta do vault"), index->root());
+    const QString dir = QFileDialog::getExistingDirectory(this, tr("Choose the vault folder"), index->root());
     if (dir.isEmpty())
         return;
 
@@ -202,7 +227,7 @@ void VaultDock::newNote()
     }
 
     bool ok = false;
-    const QString name = QInputDialog::getText(this, tr("Nova nota"), tr("Nome da nota:"), QLineEdit::Normal, tr("Sem título"), &ok).trimmed();
+    const QString name = QInputDialog::getText(this, tr("New note"), tr("Note name:"), QLineEdit::Normal, tr("Untitled"), &ok).trimmed();
     if (!ok || name.isEmpty())
         return;
 

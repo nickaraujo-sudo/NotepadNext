@@ -85,6 +85,7 @@ private:
     void handleLink(const QUrl &url);
     QString colorFor(const QString &speakerKey) const;
     QString speakerName(const QString &key) const;
+    QString channelLabel(const QString &channel) const;
     QString contextText() const;
 
     MainWindow *window;

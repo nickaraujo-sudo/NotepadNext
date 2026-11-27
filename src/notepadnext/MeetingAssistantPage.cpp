@@ -105,10 +105,10 @@ void MeetingAssistantPage::buildUi()
     // Linha 1: título da reunião e fonte do áudio (as ações ficam na barra e no menu "Reunião")
     QHBoxLayout *header = new QHBoxLayout;
     titleEdit = new QLineEdit(root);
-    titleEdit->setPlaceholderText(tr("Título da reunião (ex.: 26-11 Illumia: proposta de agentes)"));
-    systemAudioCheck = new QCheckBox(tr("Som do computador (reunião online)"), root);
+    titleEdit->setPlaceholderText(tr("Meeting title (e.g. 26-11 Client: agents proposal)"));
+    systemAudioCheck = new QCheckBox(tr("Computer audio (online meeting)"), root);
     systemAudioCheck->setChecked(QSettings().value(QStringLiteral("NotepadNext/meeting/systemAudio"), true).toBool());
-    systemAudioCheck->setToolTip(tr("Desmarque em reuniões presenciais: só o microfone é gravado."));
+    systemAudioCheck->setToolTip(tr("Uncheck for in-person meetings: only the microphone is recorded."));
     header->addWidget(titleEdit, 1);
     header->addSpacing(8);
     header->addWidget(systemAudioCheck);
@@ -120,13 +120,13 @@ void MeetingAssistantPage::buildUi()
         connect(a, &QAction::triggered, this, slot);
         return a;
     };
-    recordAction = makeAction(tr("Gravar"), tr("Grava o microfone e, se marcado, o som do computador. Nenhum bot entra na reunião."), &MeetingAssistantPage::startRecording);
-    stopAction = makeAction(tr("Parar"), tr("Para a gravação e separa quem falou o quê"), &MeetingAssistantPage::stopRecording);
-    openMeetingAction = makeAction(tr("Abrir reunião…"), tr("Abre uma reunião já gravada"), &MeetingAssistantPage::openMeeting);
-    openAudioAction = makeAction(tr("Abrir áudio…"), tr("Analisa uma gravação que você já tem (Plaud, m4a, wav, mp3)"), &MeetingAssistantPage::openAudioFile);
-    reanalyzeAction = makeAction(tr("Reanalisar"), tr("Refaz a transcrição com o vocabulário atual do vault e as vozes conhecidas"), &MeetingAssistantPage::reanalyze);
-    nameAction = makeAction(tr("Nomear vozes…"), tr("Dá nome a cada pessoa; a voz é reconhecida sozinha nas próximas reuniões"), &MeetingAssistantPage::nameSpeakers);
-    saveAction = makeAction(tr("Salvar como nota"), tr("Cria uma nota no vault com a transcrição e links para as notas relacionadas"), &MeetingAssistantPage::saveAsNote);
+    recordAction = makeAction(tr("Record"), tr("Records the microphone and, if checked, the computer audio. No bot joins the meeting."), &MeetingAssistantPage::startRecording);
+    stopAction = makeAction(tr("Stop"), tr("Stops recording and separates who said what"), &MeetingAssistantPage::stopRecording);
+    openMeetingAction = makeAction(tr("Open meeting…"), tr("Opens a meeting that was already recorded"), &MeetingAssistantPage::openMeeting);
+    openAudioAction = makeAction(tr("Open audio…"), tr("Analyzes a recording you already have (Plaud, m4a, wav, mp3)"), &MeetingAssistantPage::openAudioFile);
+    reanalyzeAction = makeAction(tr("Reanalyze"), tr("Redoes the transcription with the current vault vocabulary and the known voices"), &MeetingAssistantPage::reanalyze);
+    nameAction = makeAction(tr("Name voices…"), tr("Names each person; the voice is recognized automatically in future meetings"), &MeetingAssistantPage::nameSpeakers);
+    saveAction = makeAction(tr("Save as note"), tr("Creates a note in the vault with the transcript and links to related notes"), &MeetingAssistantPage::saveAsNote);
 
     // Linha 2: status e níveis
     QHBoxLayout *status = new QHBoxLayout;
@@ -142,7 +142,7 @@ void MeetingAssistantPage::buildUi()
         return bar;
     };
     micLevel = level(tr("mic"));
-    sysLevel = level(tr("sistema"));
+    sysLevel = level(tr("system"));
     status->addWidget(statusLabel, 1);
     status->addWidget(micLevel);
     status->addWidget(sysLevel);
@@ -160,7 +160,7 @@ void MeetingAssistantPage::buildUi()
     sideLayout->setContentsMargins(10, 0, 0, 0);
     contextLabel = new QLabel(side);
     contextLabel->setTextFormat(Qt::RichText);
-    wholeMeetingButton = new QPushButton(tr("Ver a reunião inteira"), side);
+    wholeMeetingButton = new QPushButton(tr("See the whole meeting"), side);
     wholeMeetingButton->setFlat(true);
     wholeMeetingButton->setVisible(false);
     connect(wholeMeetingButton, &QPushButton::clicked, this, [this]() {
@@ -168,11 +168,11 @@ void MeetingAssistantPage::buildUi()
         renderTranscript();
         updateSuggestions();
     });
-    QLabel *topicsTitle = new QLabel(tr("<b>Em discussão</b>"), side);
+    QLabel *topicsTitle = new QLabel(tr("<b>Being discussed</b>"), side);
     topicsLabel = new QLabel(side);
     topicsLabel->setWordWrap(true);
     topicsLabel->setTextFormat(Qt::RichText);
-    QLabel *notesTitle = new QLabel(tr("<b>Notas relacionadas</b>"), side);
+    QLabel *notesTitle = new QLabel(tr("<b>Related notes</b>"), side);
     suggestionList = new QListWidget(side);
     suggestionList->setFrameShape(QFrame::NoFrame);
     suggestionList->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -181,7 +181,7 @@ void MeetingAssistantPage::buildUi()
         const QString path = item->data(Qt::UserRole).toString();
         if (!path.isEmpty()) emit NotepadNextHub::instance()->openFileRequested(path, -1);
     });
-    QLabel *peopleTitle = new QLabel(tr("<b>Participação</b>"), side);
+    QLabel *peopleTitle = new QLabel(tr("<b>Participation</b>"), side);
     participationLabel = new QLabel(side);
     participationLabel->setTextFormat(Qt::RichText);
     participationLabel->setWordWrap(true);
@@ -228,20 +228,20 @@ void MeetingAssistantPage::setState(State s)
     switch (s) {
     case State::Idle:
         statusLabel->setText(folder.isEmpty()
-            ? tr("Pronto para gravar. Tudo é processado neste Mac.")
-            : tr("Reunião: <span style='color:gray'>%1</span>").arg(folder.toHtmlEscaped()));
+            ? tr("Ready to record. Everything is processed on this Mac.")
+            : tr("Meeting: <span style='color:gray'>%1</span>").arg(folder.toHtmlEscaped()));
         break;
     case State::Starting:
-        statusLabel->setText(tr("Preparando a gravação…"));
+        statusLabel->setText(tr("Preparing the recording…"));
         break;
     case State::Recording:
-        statusLabel->setText(tr("<span style='color:#E15554'>●</span> Gravando"));
+        statusLabel->setText(tr("<span style='color:#E15554'>●</span> Recording"));
         break;
     case State::Analyzing:
-        statusLabel->setText(tr("Analisando a reunião…"));
+        statusLabel->setText(tr("Analyzing the meeting…"));
         break;
     case State::Naming:
-        statusLabel->setText(tr("Aplicando os nomes…"));
+        statusLabel->setText(tr("Applying the names…"));
         break;
     }
 }
@@ -268,10 +268,8 @@ QString MeetingAssistantPage::voicelabPath(bool ask)
         return QString();
 
     QMessageBox::information(this, tr("Meeting Assistant"),
-        tr("Não encontrei o voicelab, que faz a gravação e a transcrição.\n\n"
-           "Compile-o com:\n  cd ~/NotepadNext/tools/voicelab\n  swift build -c release\n\n"
-           "ou indique onde ele está na próxima janela."));
-    path = QFileDialog::getOpenFileName(this, tr("Onde está o voicelab?"), QDir::homePath());
+        tr("Could not find voicelab, which does the recording and transcription.\n\nBuild it with:\n  cd ~/NotepadNext/tools/voicelab\n  swift build -c release\n\nor show where it is in the next window."));
+    path = QFileDialog::getOpenFileName(this, tr("Where is voicelab?"), QDir::homePath());
     if (!path.isEmpty() && QFileInfo(path).isExecutable()) {
         settings.setValue(QStringLiteral("NotepadNext/voicelabPath"), path);
         return path;
@@ -333,7 +331,7 @@ void MeetingAssistantPage::runVoicelab(const QStringList &args, State newState)
     });
     connect(process, &QProcess::errorOccurred, this, [this](QProcess::ProcessError e) {
         if (e == QProcess::FailedToStart) {
-            QMessageBox::warning(this, tr("Meeting Assistant"), tr("Não consegui iniciar o voicelab (%1).").arg(process->program()));
+            QMessageBox::warning(this, tr("Meeting Assistant"), tr("Could not start voicelab (%1).").arg(process->program()));
             process->deleteLater();
             process = nullptr;
             setState(State::Idle);
@@ -345,7 +343,7 @@ void MeetingAssistantPage::runVoicelab(const QStringList &args, State newState)
         process = nullptr;
         if (exitCode != 0 && !*reportedError) {
             QMessageBox::warning(this, tr("Meeting Assistant"),
-                                 tr("O voicelab terminou com erro:\n\n%1").arg(stderrTail->join(QLatin1Char('\n'))));
+                                 tr("voicelab finished with an error:\n\n%1").arg(stderrTail->join(QLatin1Char('\n'))));
         }
         if (finishedState != State::Idle && !folder.isEmpty())
             loadResult(folder);
@@ -363,7 +361,7 @@ void MeetingAssistantPage::handleEvent(const QJsonObject &e)
         setState(State::Recording);
     }
     else if (type == QLatin1String("nivel")) {
-        statusLabel->setText(tr("<span style='color:#E15554'>●</span> Gravando %1 — a transcrição aparece a cada ~10 s")
+        statusLabel->setText(tr("<span style='color:#E15554'>●</span> Recording %1 — the transcript appears every ~10 s")
                              .arg(clock(e.value(QStringLiteral("tempo")).toDouble())));
         micLevel->setValue(qMin(100, int(e.value(QStringLiteral("microfone")).toDouble() * 250)));
         sysLevel->setValue(qMin(100, int(e.value(QStringLiteral("sistema")).toDouble() * 250)));
@@ -383,7 +381,7 @@ void MeetingAssistantPage::handleEvent(const QJsonObject &e)
     }
     else if (type == QLatin1String("parado")) {
         setState(State::Analyzing);
-        statusLabel->setText(tr("Gravação encerrada. Separando quem falou o quê…"));
+        statusLabel->setText(tr("Recording finished. Separating who said what…"));
     }
     else if (type == QLatin1String("etapa")) {
         statusLabel->setText(e.value(QStringLiteral("texto")).toString().toHtmlEscaped());
@@ -429,28 +427,28 @@ void MeetingAssistantPage::stopRecording()
     if (process && state == State::Recording) {
         process->write("\n");
         setState(State::Analyzing);
-        statusLabel->setText(tr("Parando a gravação…"));
+        statusLabel->setText(tr("Stopping the recording…"));
     }
 }
 
 void MeetingAssistantPage::openMeeting()
 {
-    const QString dir = QFileDialog::getExistingDirectory(this, tr("Abrir reunião"), meetingsRoot());
+    const QString dir = QFileDialog::getExistingDirectory(this, tr("Open meeting"), meetingsRoot());
     if (dir.isEmpty()) return;
     folder = dir;
     if (QFile::exists(QDir(dir).filePath(QStringLiteral("resultado.json")))) {
         loadResult(dir);
         setState(State::Idle);
     }
-    else if (QMessageBox::question(this, tr("Meeting Assistant"), tr("Esta pasta ainda não foi analisada. Analisar agora?")) == QMessageBox::Yes) {
+    else if (QMessageBox::question(this, tr("Meeting Assistant"), tr("This folder has not been analyzed yet. Analyze it now?")) == QMessageBox::Yes) {
         reanalyze();
     }
 }
 
 void MeetingAssistantPage::openAudioFile()
 {
-    const QString file = QFileDialog::getOpenFileName(this, tr("Analisar gravação"), QDir::homePath(),
-                                                      tr("Áudio (*.m4a *.mp3 *.wav *.caf *.aac *.flac *.ogg *.opus *.mp4)"));
+    const QString file = QFileDialog::getOpenFileName(this, tr("Analyze recording"), QDir::homePath(),
+                                                      tr("Audio (*.m4a *.mp3 *.wav *.caf *.aac *.flac *.ogg *.opus *.mp4)"));
     if (file.isEmpty()) return;
     const QFileInfo fi(file);
     folder = fi.dir().filePath(fi.completeBaseName() + QStringLiteral("-voicelab"));
@@ -479,11 +477,10 @@ void MeetingAssistantPage::nameSpeakers()
     if (speakers.isEmpty()) return;
 
     QDialog d(this);
-    d.setWindowTitle(tr("Nomear vozes"));
+    d.setWindowTitle(tr("Name voices"));
     d.resize(560, 100);
     QVBoxLayout *outer = new QVBoxLayout(&d);
-    QLabel *intro = new QLabel(tr("Dê o nome de cada pessoa. A voz fica guardada (só neste Mac) e, nas próximas "
-                                  "reuniões, ela é reconhecida sozinha. Deixe em branco para não guardar."), &d);
+    QLabel *intro = new QLabel(tr("Enter each person's name. The voice is stored (only on this Mac) and recognized automatically in future meetings. Leave blank to not store it."), &d);
     intro->setWordWrap(true);
     outer->addWidget(intro);
     QFormLayout *form = new QFormLayout;
@@ -499,12 +496,12 @@ void MeetingAssistantPage::nameSpeakers()
         if (sample.size() > 150) sample = sample.left(150) + QStringLiteral("…");
         QLabel *who = new QLabel(QStringLiteral("<span style='color:%1'>●</span> <b>%2</b> <span style='color:gray'>(%3, %4 s)</span><br>"
                                                 "<i style='color:gray'>“%5”</i>")
-                                 .arg(colorFor(s.key), s.label.toHtmlEscaped(), s.channel)
+                                 .arg(colorFor(s.key), s.label.toHtmlEscaped(), channelLabel(s.channel))
                                  .arg(int(s.seconds)).arg(sample.toHtmlEscaped()), &d);
         who->setWordWrap(true);
         who->setMinimumHeight(who->heightForWidth(520));
         QLineEdit *edit = new QLineEdit(s.name, &d);
-        edit->setPlaceholderText(tr("Nome de %1").arg(s.label));
+        edit->setPlaceholderText(tr("Name of %1").arg(s.label));
         form->addRow(who);
         form->addRow(edit);
         form->addItem(new QSpacerItem(0, 8));
@@ -589,10 +586,18 @@ QString MeetingAssistantPage::colorFor(const QString &key) const
     return QStringLiteral("#888888");
 }
 
+// Recording channel shown to the user: "presencial" = microphone in the room, "remoto" = computer audio
+QString MeetingAssistantPage::channelLabel(const QString &channel) const
+{
+    if (channel == QLatin1String("presencial")) return tr("Room");
+    if (channel == QLatin1String("remoto")) return tr("Remote");
+    return channel;
+}
+
 QString MeetingAssistantPage::speakerName(const QString &key) const
 {
-    if (key == QLatin1String("ao-vivo:presencial")) return tr("Sala");
-    if (key == QLatin1String("ao-vivo:remoto")) return tr("Remoto");
+    if (key == QLatin1String("ao-vivo:presencial")) return tr("Room");
+    if (key == QLatin1String("ao-vivo:remoto")) return tr("Remote");
     for (const Speaker &s : speakers)
         if (s.key == key) return s.displayName();
     return QStringLiteral("?");
@@ -605,16 +610,7 @@ void MeetingAssistantPage::renderTranscript()
 
     if (turns.isEmpty()) {
         transcriptView->setHtml(tr(
-            "<div style='color:%1; margin:30px'>"
-            "<h2>Meeting Assistant</h2>"
-            "<p>Clique em <b>Gravar</b> (na barra acima ou no menu Reunião) no início da reunião. A conversa aparece aqui, separada por pessoa, "
-            "e ao lado surgem as notas do seu vault ligadas ao que está sendo discutido.</p>"
-            "<p>• <b>Reunião online</b> (Zoom, Teams, Meet, Slack): mantenha marcado <i>Som do computador</i>. "
-            "Nenhum bot entra na reunião.<br>"
-            "• <b>Reunião presencial</b>: desmarque <i>Som do computador</i>; só o microfone é gravado.<br>"
-            "• <b>Gravação que você já tem</b> (Plaud etc.): use <i>Abrir áudio</i>.</p>"
-            "<p>Depois, use <b>Nomear vozes</b> uma vez: nas próximas reuniões as pessoas são reconhecidas sozinhas.</p>"
-            "</div>").arg(muted.name()));
+            "<div style='color:%1; margin:30px'><h2>Meeting Assistant</h2><p>Click <b>Record</b> (in the toolbar above or in the Meeting menu) when the meeting starts. The conversation shows up here, split by person, and the notes in your vault related to what is being discussed appear on the side.</p><p>• <b>Online meeting</b> (Zoom, Teams, Meet, Slack): keep <i>Computer audio</i> checked. No bot joins the meeting.<br>• <b>In-person meeting</b>: uncheck <i>Computer audio</i>; only the microphone is recorded.<br>• <b>A recording you already have</b> (Plaud etc.): use <i>Open audio</i>.</p><p>Then use <b>Name voices</b> once: in future meetings people are recognized automatically.</p></div>").arg(muted.name()));
         return;
     }
 
@@ -653,14 +649,14 @@ void MeetingAssistantPage::renderTranscript()
     QString html;
     if (!engineTitle.isEmpty() || state == State::Recording) {
         html += QStringLiteral("<p style='color:%1; font-size:small'>%2</p>").arg(muted.name(),
-            state == State::Recording ? tr("Rascunho ao vivo — a versão final, com cada pessoa separada, aparece ao parar.")
-                                      : tr("Transcrição: %1 · clique no horário de uma fala para ver as conexões daquele trecho").arg(engineTitle.toHtmlEscaped()));
+            state == State::Recording ? tr("Live draft — the final version, with each person separated, appears when you stop.")
+                                      : tr("Transcript: %1 · click the time of a line to see the connections for that part").arg(engineTitle.toHtmlEscaped()));
     }
     for (int i = 0; i < turns.size(); ++i) {
         const Turn &t = turns[i];
         const QString color = colorFor(t.speakerKey);
-        const QString channel = t.draft ? tr("ao vivo")
-                              : (twoChannels ? t.speakerKey.section(QLatin1Char(':'), 0, 0) : QString());
+        const QString channel = t.draft ? tr("live")
+                              : (twoChannels ? channelLabel(t.speakerKey.section(QLatin1Char(':'), 0, 0)) : QString());
         QString text = linkify(t.text.toHtmlEscaped());
         if (t.draft) text = QStringLiteral("<span style='color:%1'><i>%2</i></span>").arg(muted.name(), text);
         QString bg;
@@ -713,20 +709,19 @@ void MeetingAssistantPage::updateSuggestions()
     const QColor muted = mix(palette().color(QPalette::Text), palette().color(QPalette::Base), 0.55);
     QString scope;
     if (selectedTurn >= 0 && selectedTurn < turns.size())
-        scope = tr("trecho das %1").arg(clock(turns[selectedTurn].start));
+        scope = tr("part at %1").arg(clock(turns[selectedTurn].start));
     else if (state == State::Recording)
-        scope = tr("últimos 3 minutos");
+        scope = tr("last 3 minutes");
     else
-        scope = tr("reunião inteira");
-    contextLabel->setText(tr("<span style='font-size:large'><b>Conexões com suas notas</b></span><br>"
-                             "<span style='color:%1'>%2</span>").arg(muted.name(), scope));
+        scope = tr("whole meeting");
+    contextLabel->setText(tr("<span style='font-size:large'><b>Connections to your notes</b></span><br><span style='color:%1'>%2</span>").arg(muted.name(), scope));
     wholeMeetingButton->setVisible(selectedTurn >= 0);
 
     suggestionList->clear();
     suggester->setCurrentRecording(folder);
     const QString text = contextText();
     if (!NotepadNextHub::instance()->index()->hasRoot()) {
-        topicsLabel->setText(tr("<span style='color:%1'>Abra um vault (painel Vault) para ver conexões.</span>").arg(muted.name()));
+        topicsLabel->setText(tr("<span style='color:%1'>Open a vault (sidebar) to see connections.</span>").arg(muted.name()));
         participationLabel->clear();
         return;
     }
@@ -743,14 +738,14 @@ void MeetingAssistantPage::updateSuggestions()
 
     const QList<NoteSuggestion> list = suggester->suggest(text, 10);
     if (list.isEmpty()) {
-        QListWidgetItem *item = new QListWidgetItem(tr("Nenhuma nota relacionada ainda."), suggestionList);
+        QListWidgetItem *item = new QListWidgetItem(tr("No related notes yet."), suggestionList);
         item->setFlags(Qt::NoItemFlags);
     }
     for (const NoteSuggestion &s : list) {
         QStringList why;
-        if (s.mentioned) why << tr("citada na conversa");
+        if (s.mentioned) why << tr("mentioned in the conversation");
         if (!s.sharedTags.isEmpty()) why << s.sharedTags.join(QStringLiteral(" "));
-        if (!s.sharedTerms.isEmpty()) why << tr("assuntos: %1").arg(s.sharedTerms.join(QStringLiteral(", ")));
+        if (!s.sharedTerms.isEmpty()) why << tr("topics: %1").arg(s.sharedTerms.join(QStringLiteral(", ")));
         QListWidgetItem *item = new QListWidgetItem(suggestionList);
         item->setData(Qt::UserRole, s.path);
         item->setToolTip(s.path);
@@ -782,7 +777,7 @@ void MeetingAssistantPage::updateSuggestions()
                     .arg(colorFor(s.key), s.displayName().toHtmlEscaped(), muted.name()).arg(pct);
     }
     if (rows.isEmpty() && state == State::Recording)
-        rows << tr("<span style='color:%1'>Aparece quando a gravação terminar.</span>").arg(muted.name());
+        rows << tr("<span style='color:%1'>Appears when the recording ends.</span>").arg(muted.name());
     participationLabel->setText(rows.join(QStringLiteral("<br>")));
 }
 
@@ -806,12 +801,12 @@ void MeetingAssistantPage::saveAsNote()
     if (turns.isEmpty()) return;
     VaultIndex *index = NotepadNextHub::instance()->index();
     QString dir = index->hasRoot() ? QDir(index->root()).filePath(QStringLiteral("Reuniões"))
-                                   : QFileDialog::getExistingDirectory(this, tr("Salvar a nota em"), QDir::homePath());
+                                   : QFileDialog::getExistingDirectory(this, tr("Save the note in"), QDir::homePath());
     if (dir.isEmpty()) return;
     QDir().mkpath(dir);
 
     QString title = titleEdit->text().simplified();
-    if (title.isEmpty()) title = QDateTime::currentDateTime().toString(QStringLiteral("dd-MM")) + tr(" Reunião");
+    if (title.isEmpty()) title = QDateTime::currentDateTime().toString(QStringLiteral("dd-MM")) + tr(" Meeting");
     QString fileName = title;
     fileName.remove(QRegularExpression(QStringLiteral("[/\\\\:*?\"<>|]")));
     QString path = QDir(dir).filePath(fileName + QStringLiteral(".md"));
@@ -838,18 +833,18 @@ void MeetingAssistantPage::saveAsNote()
     md += QStringLiteral("---\ntipo: reuniao\ndata: %1\nparticipantes: [%2]\ngravacao: \"%3\"\n---\n\n")
               .arg(QDate::currentDate().toString(Qt::ISODate), names.join(QStringLiteral(", ")), folder);
     md += QStringLiteral("# %1\n\n").arg(title);
-    if (!people.isEmpty()) md += tr("## Participantes\n\n") + people + QLatin1Char('\n');
+    if (!people.isEmpty()) md += tr("## Participants\n\n") + people + QLatin1Char('\n');
 
     const QList<NoteSuggestion> related = suggester->suggest([this] {
         QStringList all; for (const Turn &t : turns) all << t.text; return all.join(QLatin1Char(' '));
     }(), 8);
     if (!related.isEmpty()) {
-        md += tr("## Notas relacionadas\n\n");
+        md += tr("## Related notes\n\n");
         for (const NoteSuggestion &s : related) md += QStringLiteral("- [[%1]]\n").arg(s.title);
         md += QLatin1Char('\n');
     }
 
-    md += tr("## Transcrição\n\n");
+    md += tr("## Transcript\n\n");
     for (const Turn &t : turns) {
         if (t.draft) continue;
         QString text = t.text;
@@ -865,7 +860,7 @@ void MeetingAssistantPage::saveAsNote()
 
     QFile f(path);
     if (!f.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        QMessageBox::warning(this, tr("Meeting Assistant"), tr("Não consegui salvar %1").arg(path));
+        QMessageBox::warning(this, tr("Meeting Assistant"), tr("Could not save %1").arg(path));
         return;
     }
     f.write(md.toUtf8());

@@ -388,6 +388,23 @@ private:
             return Arg();
         }
 
+        // Whole column from a cell down: B2# = B2 to the last row of the table.
+        // New rows are included automatically; a result cell in the same column is left out.
+        if (firstIsCell && pos < s.size() && s.at(pos) == QLatin1Char('#')) {
+            ++pos;
+            int last = table->rowCount() - 1;
+            const FormulaEngine::CurrentCell self = engine->currentCell();
+            if (self.table == table && self.col == c1 && self.row >= r1 && self.row <= last)
+                last = self.row - 1;
+            Arg a;
+            a.isRange = true;
+            a.cols = 1;
+            a.rows = qMax(0, last - r1 + 1);
+            for (int r = r1; r <= last; ++r)
+                a.values << engine->cellValue(table, r, c1);
+            return a;
+        }
+
         if (accept(QStringLiteral(":"))) {
             const QString second = readIdent();
             if (firstIsCell) {
@@ -400,6 +417,10 @@ private:
                 if (c2 < 0) { fail(QStringLiteral("#REF!")); return Arg(); }
                 r1 = 1;
                 r2 = qMax(1, table->rowCount() - 1);
+                // A result cell inside the column (e.g. a total at the bottom) is left out
+                const FormulaEngine::CurrentCell self = engine->currentCell();
+                if (self.table == table && self.col >= c1 && self.col <= c2 && self.row >= r1 && self.row <= r2)
+                    r2 = qMax(r1, self.row - 1);
             }
             if (r1 > r2) std::swap(r1, r2);
             if (c1 > c2) std::swap(c1, c2);
@@ -713,7 +734,9 @@ FormulaValue FormulaEngine::cellValue(const MarkdownTable *table, int row, int c
         return FormulaValue::error(QStringLiteral("#CICLO!"));
 
     evaluating.insert(key);
+    cellStack.append({table, row, col});
     const FormulaValue v = evaluate(text, table);
+    cellStack.removeLast();
     evaluating.remove(key);
     cache.insert(key, v);
     return v;

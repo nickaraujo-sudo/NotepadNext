@@ -84,8 +84,8 @@ void BacklinksDock::refresh()
     VaultIndex *index = NotepadNextHub::instance()->index();
 
     if (!editor || !editor->isFile() || !index->contains(editor->getFilePath())) {
-        title->setText(index->hasRoot() ? tr("Abra uma nota do vault para ver os backlinks.")
-                                        : tr("Escolha a pasta do vault no painel Vault."));
+        title->setText(index->hasRoot() ? tr("Open a note from the vault to see its backlinks.")
+                                        : tr("Choose the vault folder in the sidebar."));
         return;
     }
 
@@ -128,7 +128,7 @@ void BacklinksDock::refresh()
         seen << link.target;
         const QString resolved = index->resolveLink(link.target);
         const QString label = link.target.startsWith(QLatin1Char('\x01')) ? QFileInfo(link.target.mid(1)).completeBaseName() : link.target;
-        auto *item = new QTreeWidgetItem(outgoing, {resolved.isEmpty() ? label + tr("  (criar)") : label});
+        auto *item = new QTreeWidgetItem(outgoing, {resolved.isEmpty() ? label + tr("  (create)") : label});
         item->setForeground(0, resolved.isEmpty() ? dim : linkColor);
         if (resolved.isEmpty())
             item->setData(0, Qt::UserRole + 2, link.target);
@@ -136,7 +136,7 @@ void BacklinksDock::refresh()
             item->setData(0, Qt::UserRole, resolved);
         item->setData(0, Qt::UserRole + 1, -1);
     }
-    outgoing->setText(0, tr("Links de saída (%1)").arg(seen.size()));
+    outgoing->setText(0, tr("Outgoing links (%1)").arg(seen.size()));
     outgoing->setExpanded(true);
 
     title->setText(tr("<b>%1</b>").arg(info.name.toHtmlEscaped()));
